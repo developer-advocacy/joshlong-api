@@ -4,7 +4,6 @@ import com.joshlong.templates.MarkdownService;
 import lombok.SneakyThrows;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -36,7 +35,7 @@ import java.util.stream.Collectors;
  *
  * @author <a href="mailto:josh@joshlong.com">Josh Long</a>
  */
-@EnableBatchProcessing
+
 @EnableConfigurationProperties(BlogProperties.class)
 @SpringBootApplication
 public class SiteApplication {
@@ -52,11 +51,7 @@ public class SiteApplication {
         return args -> {
             var contentRoot = properties.contentRootDirectory();
             var blogPosts = indexService.buildIndexFor(contentRoot);
-            for (var bp : blogPosts) {
-                log.info("indexed " + bp.title());
-            }
-
-
+            blogPosts.forEach((relativePath, bp) -> log.info("" + relativePath + "=" + bp.toString()));
         };
     }
 }
@@ -148,7 +143,8 @@ class DefaultBlogPostService implements BlogPostService {
 
     @Override
     @SneakyThrows
-    public BlogPost buildBlogPostFrom(BlogPostContentType type, String contents) {
+    public BlogPost buildBlogPostFrom(
+            BlogPostContentType type, String contents) {
         var headerDivider = "~~~~~~";
         Assert.state(contents.contains(headerDivider), () -> "this blog does not contain any headers!");
         var parts = contents.split(headerDivider);
@@ -157,7 +153,9 @@ class DefaultBlogPostService implements BlogPostService {
         Assert.notNull(dateFromHeaderString, () -> "the blog must have a published date!");
         var date = buildHeaderDate(dateFromHeaderString);
         var processedContent = this.markdownService.convertMarkdownTemplateToHtml(parts[1]);
-        return new BlogPost(header.get("title"), date, contents, processedContent,
+        return new BlogPost(
+
+                header.get("title"), date, contents, processedContent,
                 (header.get("status").toLowerCase(Locale.ROOT).equalsIgnoreCase("published")), type);
     }
 
@@ -195,6 +193,16 @@ class DefaultIndexService implements IndexService {
         this.blogPostService = blogPostService;
     }
 
+    @SneakyThrows
+    @Override
+    public Map<String, BlogPost> buildIndexFor(File root) {
+        return Files.walk(root.toPath())
+                .parallel()
+                .map(Path::toFile)
+                .filter(this::isValidFile)
+                .collect(Collectors.toMap(file -> file.getAbsolutePath().substring(root.getAbsolutePath().length()), blogPostService::buildBlogPostFrom));
+    }
+
     private boolean isValidFile(File fileName) {
         var lcFn = fileName.getName().toLowerCase(Locale.ROOT);
         for (var e : this.extensions)
@@ -202,24 +210,11 @@ class DefaultIndexService implements IndexService {
                 return true;
         return false;
     }
-
-    @SneakyThrows
-    @Override
-    public Set<BlogPost> buildIndexFor(File root) {
-
-        return Files.walk(root.toPath())
-                .parallel()
-                .map(Path::toFile)
-                .filter(this::isValidFile)
-                .map(blogPostService::buildBlogPostFrom)
-                .collect(Collectors.toSet());
-
-    }
 }
 
 interface IndexService {
 
-    Set<BlogPost> buildIndexFor(File root);
+    Map<String, BlogPost> buildIndexFor(File root);
 }
 
 interface BlogPostService {
