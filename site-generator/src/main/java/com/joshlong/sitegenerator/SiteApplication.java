@@ -57,7 +57,7 @@ public class SiteApplication {
 		return args -> {
 			is.refreshIndex();
 			is.search("content: \"india\"").forEach(b -> System.out.println(b.title()));
-			is.search("title: \"Shanghai\"").forEach(b -> System.out.println(b.title()));
+			is.search("title: \"Shanghai, December 4th\"").forEach(b -> System.out.println(b.title()));
 		};
 	}
 
@@ -111,7 +111,7 @@ class BlogConfiguration {
 
 enum BlogPostContentType {
 
-	HTML, MARKDOWN
+	HTML, MD
 
 }
 
@@ -147,17 +147,25 @@ class DefaultBlogPostService implements BlogPostService {
 	@SneakyThrows
 	@Override
 	public BlogPost buildBlogPostFrom(File file) {
+		log.info("------");
+		log.info("indexing " + file.getAbsolutePath());
 		Assert.notNull(file, () -> "the file must not be null");
 		Assert.state(file.exists(), () -> "the file " + file.getAbsolutePath() + " does not exist!");
-		return buildBlogPostFrom(file.getName().toLowerCase(Locale.ROOT).endsWith(".md") ? BlogPostContentType.MARKDOWN
+		return buildBlogPostFrom(file.getName().toLowerCase(Locale.ROOT).endsWith(".md") ? BlogPostContentType.MD
 				: BlogPostContentType.HTML, new FileInputStream(file));
 	}
+
+	private final Log log = LogFactory.getLog(getClass());
 
 	@Override
 	@SneakyThrows
 	public BlogPost buildBlogPostFrom(BlogPostContentType type, String contents) {
+		// Assert.state(contents.length() > 200, "the content should be 200 chars or
+		// more");
+		// log.info( contents .substring(0 , 200));
+
 		var headerDivider = "~~~~~~";
-		Assert.state(contents.contains(headerDivider), () -> "this blog does not contain any headers!");
+		Assert.state(contents.contains(headerDivider), () -> "this blog  does not contain any headers! " + contents);
 		var parts = contents.split(headerDivider);
 		var header = buildHeader(parts[0]);
 		var dateFromHeaderString = header.get("date");
@@ -247,7 +255,8 @@ class DefaultIndexService implements IndexService {
 	@SneakyThrows
 	private Map<String, BlogPost> buildIndex() {
 		log.info("building index..");
-		var mapOfContent = Files.walk(root.toPath()).parallel() //
+		var mapOfContent = Files.walk(root.toPath()) //
+				.parallel() //
 				.map(Path::toFile) //
 				.filter(this::isValidFile) //
 				.collect(Collectors.toMap(file -> file.getAbsolutePath().substring(root.getAbsolutePath().length()),
@@ -282,8 +291,7 @@ class DefaultIndexService implements IndexService {
 	@SneakyThrows
 	private Document buildBlogPost(String relativePath, BlogPost post) {
 		var document = new Document();
-		document.add(new StringField("title", post.title(), Field.Store.YES));
-		document.add(new StringField("description", post.title(), Field.Store.YES));
+		document.add(new TextField("title", post.title(), Field.Store.YES));
 		document.add(new StringField("path", relativePath, Field.Store.YES));
 		document.add(new TextField("originalContent", post.originalContent(), Field.Store.YES));
 		document.add(new TextField("content", htmlToText(post.processContent()), Field.Store.YES));
