@@ -8,25 +8,31 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.Term;
+import org.jsoup.Jsoup;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.NestedExceptionUtils;
 import org.springframework.core.io.Resource;
+import org.springframework.stereotype.Controller;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
-import org.springframework.util.ReflectionUtils;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
@@ -46,19 +52,32 @@ import java.util.stream.Collectors;
 @SpringBootApplication
 public class SiteApplication {
 
+	@Bean
+	ApplicationRunner indexRunner(IndexService is) {
+		return args -> is.refreshIndex();
+	}
+
+	private static final Log log = LogFactory.getLog(DefaultBlogPostService.class);
+
 	public static void main(String[] args) {
 		SpringApplication.run(SiteApplication.class, args);
 	}
 
-	private static final Log log = LogFactory.getLog(SiteApplication.class);
+}
 
-	@Bean
-	ApplicationRunner runner(BlogProperties properties, IndexService indexService) {
-		return args -> {
-			var contentRoot = properties.contentRootDirectoryResource();
-			var blogPosts = indexService.buildIndexFor(contentRoot.getFile());
-			blogPosts.forEach((relativePath, bp) -> log.info("" + relativePath + "=" + bp.toString()));
-		};
+@Controller
+@ResponseBody
+class SearchRestController {
+
+	private final IndexService indexService;
+
+	SearchRestController(IndexService indexService) {
+		this.indexService = indexService;
+	}
+
+	@GetMapping("/search")
+	Collection<BlogPost> search(@RequestParam String query) {
+		return this.indexService.search(query);
 	}
 
 }
@@ -72,8 +91,11 @@ record BlogProperties(Resource contentRootDirectoryResource, Resource outputDire
 class BlogConfiguration {
 
 	@Bean
-	IndexService indexService(BlogPostService blogPostService, LuceneTemplate luceneTemplate) {
-		return new DefaultIndexService(blogPostService, luceneTemplate);
+	@SneakyThrows
+	IndexService indexService(ApplicationEventPublisher publisher, BlogProperties properties,
+			BlogPostService blogPostService, LuceneTemplate luceneTemplate) {
+		return new DefaultIndexService(publisher, properties.contentRootDirectoryResource().getFile(), blogPostService,
+				luceneTemplate);
 	}
 
 	@Bean
@@ -95,19 +117,12 @@ record BlogPost(String title, Date date, String originalContent, String processC
 
 class DefaultBlogPostService implements BlogPostService {
 
-	private static final Log log = LogFactory.getLog(DefaultBlogPostService.class);
-
 	private final ThreadLocal<SimpleDateFormat> simpleDateFormatThreadLocal = new ThreadLocal<>();
 
 	private final MarkdownService markdownService;
 
 	DefaultBlogPostService(MarkdownService markdownService) {
 		this.markdownService = markdownService;
-	}
-
-	private static void exception(Exception e) throws RuntimeException {
-		log.error(NestedExceptionUtils.buildMessage("an exception has occurred! ", e));
-		ReflectionUtils.rethrowRuntimeException(e);
 	}
 
 	@SneakyThrows
@@ -145,9 +160,7 @@ class DefaultBlogPostService implements BlogPostService {
 		Assert.notNull(dateFromHeaderString, () -> "the blog must have a published date!");
 		var date = buildHeaderDate(dateFromHeaderString);
 		var processedContent = this.markdownService.convertMarkdownTemplateToHtml(parts[1]);
-		return new BlogPost(
-
-				header.get("title"), date, contents, processedContent,
+		return new BlogPost(header.get("title"), date, contents, processedContent,
 				(header.get("status").toLowerCase(Locale.ROOT).equalsIgnoreCase("published")), type);
 	}
 
@@ -176,32 +189,73 @@ class DefaultBlogPostService implements BlogPostService {
 
 class DefaultIndexService implements IndexService {
 
+	private final static Log log = LogFactory.getLog(DefaultIndexService.class);
+
+	private final int maxResults = 1000;
+
+	private final File root;
+
+	private final Map<String, BlogPost> index = new ConcurrentHashMap<>();
+
+	private final ApplicationEventPublisher publisher;
+
 	private final BlogPostService blogPostService;
 
 	private final LuceneTemplate luceneTemplate;
 
 	private final Set<String> extensions = Arrays.stream(BlogPostContentType.values())
-			.map(bpct -> bpct.name().toLowerCase(Locale.ROOT)).collect(Collectors.toSet());
+			.map(contentType -> contentType.name().toLowerCase(Locale.ROOT)).collect(Collectors.toSet());
 
-	DefaultIndexService(BlogPostService blogPostService, LuceneTemplate luceneTemplate) {
+	@SneakyThrows
+	DefaultIndexService(ApplicationEventPublisher publisher, File contentRoot, BlogPostService blogPostService,
+			LuceneTemplate luceneTemplate) {
 		this.blogPostService = blogPostService;
 		this.luceneTemplate = luceneTemplate;
+		this.root = contentRoot;
+		this.publisher = publisher;
+	}
+
+	private final Object monitor = new Object();
+
+	@Override
+	public Map<String, BlogPost> refreshIndex() {
+		synchronized (this.monitor) {
+			this.index.clear();
+			this.index.putAll(this.buildIndex());
+		}
+		this.publisher.publishEvent(new IndexingFinishedEvent());
+		return this.index;
+	}
+
+	@Override
+	@SneakyThrows
+	public Collection<BlogPost> search(String query) {
+		log.info("searching for: " + query);
+		var strings = searchIndex(query, this.maxResults);
+		log.info("there are " + strings.size() + " results.");
+		return strings.stream().map(this.index::get).collect(Collectors.toSet());
+	}
+
+	private List<String> searchIndex(String queryStr, int maxResults) throws Exception {
+		return this.luceneTemplate.search(queryStr, maxResults, document -> document.get("path"));
 	}
 
 	@SneakyThrows
-	@Override
-	public Map<String, BlogPost> buildIndexFor(File root) {
-
-		var mapOfContent = Files.walk(root.toPath()).parallel().map(Path::toFile).filter(this::isValidFile)
+	private Map<String, BlogPost> buildIndex() {
+		log.info("building index..");
+		var mapOfContent = Files.walk(root.toPath()).parallel() //
+				.map(Path::toFile) //
+				.filter(this::isValidFile) //
 				.collect(Collectors.toMap(file -> file.getAbsolutePath().substring(root.getAbsolutePath().length()),
 						blogPostService::buildBlogPostFrom));
 
 		this.luceneTemplate.write(mapOfContent.entrySet(), entry -> {
 			var rp = entry.getKey();
 			var bp = entry.getValue();
-			var doc = buildPodcastDocument(rp, bp);
-			return new DocumentWriteMapper.DocumentWrite(new Term("path", rp), doc);
+			var doc = buildBlogPost(rp, bp);
+			return new DocumentWriteMapper.DocumentWrite(new Term("description", rp), doc);
 		});
+
 		return mapOfContent;
 	}
 
@@ -217,13 +271,18 @@ class DefaultIndexService implements IndexService {
 		return ns.toString() + blogPost.date().getYear() + blogPost.date().getMonth() + blogPost.date().getDate();
 	}
 
+	private String htmlToText(String htmlMarkup) {
+		return Jsoup.parse(htmlMarkup).text();
+	}
+
 	@SneakyThrows
-	private Document buildPodcastDocument(String relativePath, BlogPost post) {
+	private Document buildBlogPost(String relativePath, BlogPost post) {
 		var document = new Document();
 		document.add(new StringField("title", post.title(), Field.Store.YES));
+		document.add(new StringField("description", post.title(), Field.Store.YES));
 		document.add(new StringField("path", relativePath, Field.Store.YES));
 		document.add(new TextField("originalContent", post.originalContent(), Field.Store.YES));
-		document.add(new TextField("content", post.processContent(), Field.Store.YES));
+		document.add(new TextField("content", htmlToText(post.processContent()), Field.Store.YES));
 		document.add(new LongPoint("time", post.date().getTime()));
 		document.add(new StringField("key", buildHashKeyFor(post), Field.Store.YES));
 		document.add(new IntPoint("published", post.published() ? 1 : 0));
@@ -242,7 +301,9 @@ class DefaultIndexService implements IndexService {
 
 interface IndexService {
 
-	Map<String, BlogPost> buildIndexFor(File root);
+	Map<String, BlogPost> refreshIndex();
+
+	Collection<BlogPost> search(String query);
 
 }
 
@@ -255,5 +316,13 @@ interface BlogPostService {
 	BlogPost buildBlogPostFrom(BlogPostContentType type, InputStream file);
 
 	BlogPost buildBlogPostFrom(File file);
+
+}
+
+class IndexingFinishedEvent extends ApplicationEvent {
+
+	public IndexingFinishedEvent() {
+		super(new Date());
+	}
 
 }
