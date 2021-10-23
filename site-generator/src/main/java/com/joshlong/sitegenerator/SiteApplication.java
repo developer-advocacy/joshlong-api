@@ -54,7 +54,11 @@ public class SiteApplication {
 
 	@Bean
 	ApplicationRunner indexRunner(IndexService is) {
-		return args -> is.refreshIndex();
+		return args -> {
+			is.refreshIndex();
+			is.search("content: \"india\"").forEach(b -> System.out.println(b.title()));
+			is.search("title: \"Shanghai\"").forEach(b -> System.out.println(b.title()));
+		};
 	}
 
 	private static final Log log = LogFactory.getLog(DefaultBlogPostService.class);
@@ -201,6 +205,8 @@ class DefaultIndexService implements IndexService {
 
 	private final BlogPostService blogPostService;
 
+	private final Object monitor = new Object();
+
 	private final LuceneTemplate luceneTemplate;
 
 	private final Set<String> extensions = Arrays.stream(BlogPostContentType.values())
@@ -214,8 +220,6 @@ class DefaultIndexService implements IndexService {
 		this.root = contentRoot;
 		this.publisher = publisher;
 	}
-
-	private final Object monitor = new Object();
 
 	@Override
 	public Map<String, BlogPost> refreshIndex() {
@@ -253,7 +257,7 @@ class DefaultIndexService implements IndexService {
 			var rp = entry.getKey();
 			var bp = entry.getValue();
 			var doc = buildBlogPost(rp, bp);
-			return new DocumentWriteMapper.DocumentWrite(new Term("description", rp), doc);
+			return new DocumentWriteMapper.DocumentWrite(new Term("key", buildHashKeyFor(bp)), doc);
 		});
 
 		return mapOfContent;
