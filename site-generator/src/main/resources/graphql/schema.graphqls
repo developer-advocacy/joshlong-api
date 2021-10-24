@@ -4,8 +4,15 @@ type Query {
     blogPostByPath (path: String) : BlogPost
 }
 
+type IndexRebuildStatus  {
+    indexSize : Int
+    date : String
+}
+
+
+
 type Mutation {
-    rebuildIndex: Int
+    rebuildIndex: IndexRebuildStatus
 }
 
 type BlogPost {
