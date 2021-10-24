@@ -1,15 +1,13 @@
 type Query {
     search (query: String) : [BlogPost]
-    blogPosts: [BlogPost]
     blogPostByPath (path: String) : BlogPost
+    blogPosts: [BlogPost]
 }
 
 type IndexRebuildStatus  {
     indexSize : Int
     date : String
 }
-
-
 
 type Mutation {
     rebuildIndex: IndexRebuildStatus
