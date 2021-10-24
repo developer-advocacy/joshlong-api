@@ -1,0 +1,25 @@
+type Query {
+
+    search (query: String) : [BlogPost]
+
+    blogPosts : [BlogPost]
+    blogPostByPath (path: String) : BlogPost 
+} 
+
+type Mutation {
+    rebuildIndex  : String  
+}
+
+type BlogPost {
+    title: String 
+    date : String  
+    published: Boolean 
+    originalContent : String 
+    processedContent: String  
+    type: BlogPostContentType 
+}
+
+enum BlogPostContentType {
+    HTML 
+    MD
+} 
