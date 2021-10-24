@@ -78,9 +78,6 @@ class ApiController {
 		this.is = is;
 	}
 
-	// blogPosts : [BlogPost]
-	// blogPostByPath (path: String) : BlogPost
-
 	@QueryMapping
 	Collection<BlogPost> blogPosts() {
 		return this.is.getIndex().values();
@@ -106,26 +103,23 @@ class ApiController {
 
 	@SchemaMapping(typeName = "BlogPost", field = "date")
 	String date(BlogPost bp) {
-		return getDateFormat().format(bp.date());
+		return ensureDateFormat().format(bp.date());
 	}
 
-	private SimpleDateFormat getDateFormat() {
-		if (this.sdf.get() == null)
-			this.sdf.set(buildSimpleDateFormat());
+	private SimpleDateFormat ensureDateFormat() {
+		if (this.sdf.get() == null) {
+			var tz = TimeZone.getTimeZone("UTC");
+			var df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"); // Quoted "Z" to indicate
+			// UTC, no timezone offset
+			df.setTimeZone(tz);
+			this.sdf.set(df);
+		}
 		return this.sdf.get();
-	}
-
-	private static SimpleDateFormat buildSimpleDateFormat() {
-		var tz = TimeZone.getTimeZone("UTC");
-		var df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"); // Quoted "Z" to indicate
-																// UTC, no timezone offset
-		df.setTimeZone(tz);
-		return df;
 	}
 
 	@SchemaMapping(typeName = "IndexRebuildStatus", field = "date")
 	String indexRebuildStatusDate(IndexRebuildStatus rebuildStatus) {
-		return getDateFormat().format(rebuildStatus.date());
+		return ensureDateFormat().format(rebuildStatus.date());
 	}
 
 }
