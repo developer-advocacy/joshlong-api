@@ -70,35 +70,35 @@ public class SiteApplication {
 @Controller
 class ApiController {
 
-	private final IndexService is;
+	private final IndexService indexService;
 
-	private final ThreadLocal<SimpleDateFormat> sdf = new ThreadLocal<>();
+	private final ThreadLocal<SimpleDateFormat> dateFormat = new ThreadLocal<>();
 
-	ApiController(IndexService is) {
-		this.is = is;
+	ApiController(IndexService indexService) {
+		this.indexService = indexService;
 	}
 
 	@QueryMapping
 	Collection<BlogPost> blogPosts() {
-		return this.is.getIndex().values();
+		return this.indexService.getIndex().values();
 	}
 
 	@QueryMapping
 	Mono<BlogPost> blogPostByPath(@Argument String path) {
-		var index = this.is.getIndex();
+		var index = this.indexService.getIndex();
 		var nk = path.toLowerCase(Locale.ROOT);
 		return index.containsKey(nk) ? Mono.just(index.get(nk)) : Mono.empty();
 	}
 
 	@MutationMapping
 	IndexRebuildStatus rebuildIndex() {
-		var count = this.is.rebuildIndex().size();
+		var count = this.indexService.rebuildIndex().size();
 		return new IndexRebuildStatus(count, new Date());
 	}
 
 	@QueryMapping
 	Collection<BlogPost> search(@Argument String query) {
-		return this.is.search(query);
+		return this.indexService.search(query);
 	}
 
 	@SchemaMapping(typeName = "BlogPost", field = "date")
@@ -107,14 +107,14 @@ class ApiController {
 	}
 
 	private SimpleDateFormat ensureDateFormat() {
-		if (this.sdf.get() == null) {
+		if (this.dateFormat.get() == null) {
 			var tz = TimeZone.getTimeZone("UTC");
-			var df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'"); // Quoted "Z" to indicate
-			// UTC, no timezone offset
+			var df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+			/* Quoted "Z" to indicate UTC, no timezone offset */
 			df.setTimeZone(tz);
-			this.sdf.set(df);
+			this.dateFormat.set(df);
 		}
-		return this.sdf.get();
+		return this.dateFormat.get();
 	}
 
 	@SchemaMapping(typeName = "IndexRebuildStatus", field = "date")
