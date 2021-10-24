@@ -14,18 +14,20 @@
     <name>site-generator</name>
     <description>Demo project for Spring Boot</description>
     <properties>
+<!--        <jgit.version>4.11.0.201803080745-r</jgit.version>-->
+        <jgit.version>5.13.0.202109080827-r</jgit.version>
+        <java.version>11</java.version>
+        <jsch.version>0.1.54</jsch.version>
+<!--        -->
         <lucene.version>8.6.2</lucene.version>
         <jsoup.version>1.13.1</jsoup.version>
-        <!--        <artifactory-maven-plugin.version>2.4.0</artifactory-maven-plugin.version>-->
         <artifactory-maven-plugin.version>3.2.3</artifactory-maven-plugin.version>
         <java.version>17</java.version>
     </properties>
     <dependencies>
         <dependency>
             <groupId>com.joshlong</groupId>
-            <artifactId>
-                template-spring-boot-starter
-            </artifactId>
+            <artifactId>template-spring-boot-starter</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
         <dependency>
@@ -61,21 +63,40 @@
             <artifactId>lucene-spring-boot-starter</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
+   <!--  <dependency>
+            <groupId>com.joshlong</groupId>
+            <artifactId>git-spring-boot-starter</artifactId>
+            <version>0.0.1-SNAPSHOT</version>
+        </dependency>-->
+         <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>${jgit.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.springframework.experimental</groupId>
+            <artifactId>graphql-spring-boot-starter</artifactId>
+            <version>1.0.0-M2</version>
+        </dependency>
+
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-test</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
-            <groupId>org.springframework.batch</groupId>
-            <artifactId>spring-batch-test</artifactId>
-            <scope>test</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
         </dependency>
+    
     </dependencies>
 
     <build>
