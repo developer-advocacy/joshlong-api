@@ -1,43 +1,13 @@
 package com.joshlong.sitegenerator;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.StringReader;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Properties;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.joshlong.lucene.DocumentWriteMapper;
 import com.joshlong.lucene.LuceneTemplate;
 import com.joshlong.templates.MarkdownService;
-
+import lombok.SneakyThrows;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.lucene.document.Document;
-import org.apache.lucene.document.Field;
-import org.apache.lucene.document.IntPoint;
-import org.apache.lucene.document.LongPoint;
-import org.apache.lucene.document.StringField;
-import org.apache.lucene.document.TextField;
+import org.apache.lucene.document.*;
 import org.apache.lucene.index.Term;
 import org.eclipse.jgit.api.Git;
 import org.jsoup.Jsoup;
@@ -61,11 +31,17 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
 import org.springframework.util.FileSystemUtils;
-
-import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.io.*;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * This the GraphQL API for the new joshlong.com. Most o the endpoints are
@@ -90,6 +66,7 @@ public class SiteApplication {
 
 }
 
+@Log4j2
 @Controller
 class ApiController {
 
@@ -110,15 +87,15 @@ class ApiController {
     }
 
     @QueryMapping
-    Collection<BlogPost> blogPostByPath(@Argument String path) {
+    Mono<BlogPost> blogPostByPath(@Argument String path) {
         var posts = blogPosts();
-        return posts.stream().filter(bp -> bp.path().equals(path)).collect(Collectors.toList());
+        var results = posts.stream().filter(bp -> bp.path().equals(path)).collect(Collectors.toList());
+        return (results.size() == 1) ? Mono.just(results.get(0)) : Mono.empty();
     }
 
     @MutationMapping
-    Mono<String> rebuildIndex() {
-        this.is.rebuildIndex();
-        return Mono.just(getDateFormat().format(new Date()));
+    int rebuildIndex() {
+        return this.is.rebuildIndex().size();
     }
 
     @QueryMapping
@@ -157,7 +134,7 @@ class BlogConfiguration {
     @Bean
     @SneakyThrows
     IndexService indexService(ApplicationEventPublisher publisher, BlogProperties properties,
-            BlogPostService blogPostService, LuceneTemplate luceneTemplate) {
+                              BlogPostService blogPostService, LuceneTemplate luceneTemplate) {
         return new DefaultIndexService(publisher, blogPostService, luceneTemplate, properties.gitRepository(),
                 properties.localCloneDirectory().getFile(), properties.resetOnRebuild());
     }
@@ -174,7 +151,7 @@ enum BlogPostContentType {
 }
 
 record BlogPost(String title, Date date, String originalContent, String processedContent, boolean published,
-        BlogPostContentType type, String path) {
+                BlogPostContentType type, String path) {
 }
 
 @Log4j2
@@ -200,7 +177,7 @@ class DefaultBlogPostService implements BlogPostService {
     @Override
     public BlogPost buildBlogPostFrom(String path, File file) {
         log.info("------");
-        log.info("indexing " + file.getAbsolutePath());
+        log.info("indexing " + file.getAbsolutePath() + " with path " + path);
         Assert.notNull(file, () -> "the file must not be null");
         Assert.state(file.exists(), () -> "the file " + file.getAbsolutePath() + " does not exist!");
         var type = file.getName().toLowerCase(Locale.ROOT).endsWith(".md") ? BlogPostContentType.MD
@@ -267,7 +244,7 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 
     @SneakyThrows
     DefaultIndexService(ApplicationEventPublisher publisher, BlogPostService blogPostService,
-            LuceneTemplate luceneTemplate, URI gitRepository, File contentRoot, boolean resetOnRebuild) {
+                        LuceneTemplate luceneTemplate, URI gitRepository, File contentRoot, boolean resetOnRebuild) {
         this.blogPostService = blogPostService;
         this.resetOnRebuild = resetOnRebuild;
         this.luceneTemplate = luceneTemplate;
@@ -330,8 +307,8 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
         var ext = ".md";
         var sub = file.getAbsolutePath().substring(contentDirectory.getAbsolutePath().length());
         if (sub.endsWith(ext))
-            sub = sub.substring(0, sub.length() - ext.length()) + ".html"; 
-        
+            sub = sub.substring(0, sub.length() - ext.length()) + ".html";
+
         return sub;
     }
 

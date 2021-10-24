@@ -1,25 +1,23 @@
 type Query {
-
     search (query: String) : [BlogPost]
-
-    blogPosts : [BlogPost]
-    blogPostByPath (path: String) : BlogPost 
-} 
+    blogPosts: [BlogPost]
+    blogPostByPath (path: String) : BlogPost
+}
 
 type Mutation {
-    rebuildIndex  : String  
+    rebuildIndex: Int
 }
 
 type BlogPost {
-    title: String 
-    date : String  
-    published: Boolean 
-    originalContent : String 
-    processedContent: String  
-    type: BlogPostContentType 
+    title: String
+    date : String
+    published: Boolean
+    originalContent : String
+    processedContent: String
+    type: BlogPostContentType
 }
 
 enum BlogPostContentType {
-    HTML 
+    HTML
     MD
 } 
