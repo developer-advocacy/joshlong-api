@@ -20,6 +20,7 @@ import java.io.File;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.DateFormat;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +29,8 @@ import java.util.stream.Collectors;
 class DefaultIndexService implements IndexService, ApplicationListener<ApplicationReadyEvent> {
 
 	private final static Log log = LogFactory.getLog(DefaultIndexService.class);
+
+	private final DateFormat simpleDateFormat;
 
 	private final File root;
 
@@ -50,8 +53,10 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 			.collect(Collectors.toSet());
 
 	@SneakyThrows
-	DefaultIndexService(ApplicationEventPublisher publisher, BlogPostService blogPostService,
-			LuceneTemplate luceneTemplate, URI gitRepository, File contentRoot, boolean resetOnRebuild) {
+	DefaultIndexService(DateFormat simpleDateFormat, ApplicationEventPublisher publisher,
+			BlogPostService blogPostService, LuceneTemplate luceneTemplate, URI gitRepository, File contentRoot,
+			boolean resetOnRebuild) {
+		this.simpleDateFormat = simpleDateFormat;
 		this.blogPostService = blogPostService;
 		this.resetOnRebuild = resetOnRebuild;
 		this.luceneTemplate = luceneTemplate;
@@ -108,7 +113,7 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 		return searchIndex(query, maxResults).stream().map(this.index::get).collect(Collectors.toSet());
 	}
 
-	private List<String> searchIndex(String queryStr, int maxResults) throws Exception {
+	private List<String> searchIndex(String queryStr, int maxResults) {
 		return this.luceneTemplate.search(queryStr, maxResults, document -> document.get("path"));
 	}
 
@@ -133,14 +138,12 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 					return new DefaultIndexService.BlogPostKey(blogPost.path(), blogPost);
 				}).collect(Collectors.toMap(DefaultIndexService.BlogPostKey::path,
 						DefaultIndexService.BlogPostKey::blogPost));
-
 		this.luceneTemplate.write(mapOfContent.entrySet(), entry -> {
 			var path = entry.getKey();
 			var blogPost = entry.getValue();
 			var doc = buildBlogPost(path, blogPost);
 			return new DocumentWriteMapper.DocumentWrite(new Term("key", buildHashKeyFor(blogPost)), doc);
 		});
-
 		return mapOfContent;
 	}
 
@@ -149,11 +152,13 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 		Assert.notNull(blogPost.date(), () -> "the blog date must not be null");
 		Assert.notNull(blogPost.title(), () -> "the blog title must not be null");
 		var title = blogPost.title();
-		var ns = new StringBuilder();
-		for (var c : title.toCharArray())
-			if (Character.isAlphabetic(c))
-				ns.append(c);
-		return ns.toString() + blogPost.date().getYear() + blogPost.date().getMonth() + blogPost.date().getDate();
+		var stringBuilder = new StringBuilder();
+		for (var c : title.toCharArray()) {
+			if (Character.isAlphabetic(c)) {
+				stringBuilder.append(c);
+			}
+		}
+		return stringBuilder + this.simpleDateFormat.format(blogPost.date());
 	}
 
 	private String htmlToText(String htmlMarkup) {
@@ -169,7 +174,6 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 		document.add(new TextField("content", htmlToText(post.processedContent()), Field.Store.YES));
 		document.add(new LongPoint("time", post.date().getTime()));
 		document.add(new StringField("key", buildHashKeyFor(post), Field.Store.YES));
-		document.add(new IntPoint("published", post.published() ? 1 : 0));
 		return document;
 	}
 

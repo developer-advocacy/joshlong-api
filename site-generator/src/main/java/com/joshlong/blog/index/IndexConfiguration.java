@@ -4,6 +4,7 @@ import com.joshlong.blog.BlogPostService;
 import com.joshlong.blog.BlogProperties;
 import com.joshlong.blog.IndexService;
 import com.joshlong.blog.dates.IsoDateFormat;
+import com.joshlong.blog.dates.SimpleDateDateFormat;
 import com.joshlong.lucene.LuceneTemplate;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -36,10 +37,10 @@ class IndexConfiguration {
 
 	@Bean
 	@SneakyThrows
-	IndexService indexService(ApplicationEventPublisher publisher, BlogProperties properties,
-			BlogPostService blogPostService, LuceneTemplate luceneTemplate) {
-		return new DefaultIndexService(publisher, blogPostService, luceneTemplate, properties.gitRepository(),
-				properties.localCloneDirectory().getFile(), properties.resetOnRebuild());
+	IndexService indexService(@SimpleDateDateFormat DateFormat simpleDateFormat, ApplicationEventPublisher publisher,
+			BlogProperties properties, BlogPostService blogPostService, LuceneTemplate luceneTemplate) {
+		return new DefaultIndexService(simpleDateFormat, publisher, blogPostService, luceneTemplate,
+				properties.gitRepository(), properties.localCloneDirectory().getFile(), properties.resetOnRebuild());
 	}
 
 }
