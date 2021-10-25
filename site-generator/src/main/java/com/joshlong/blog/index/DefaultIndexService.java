@@ -29,7 +29,7 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 
 	private final static Log log = LogFactory.getLog(DefaultIndexService.class);
 
-    private final File root;
+	private final File root;
 
 	private final Map<String, BlogPost> index = new ConcurrentHashMap<>();
 
@@ -105,8 +105,8 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 	@Override
 	@SneakyThrows
 	public Collection<BlogPost> search(String query) {
-        var maxResults = 1000;
-        return searchIndex(query, maxResults).stream().map(this.index::get).collect(Collectors.toSet());
+		var maxResults = 1000;
+		return searchIndex(query, maxResults).stream().map(this.index::get).collect(Collectors.toSet());
 	}
 
 	private List<String> searchIndex(String queryStr, int maxResults) throws Exception {
