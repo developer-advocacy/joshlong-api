@@ -14,11 +14,10 @@
     <name>site-generator</name>
     <description>Demo project for Spring Boot</description>
     <properties>
-<!--        <jgit.version>4.11.0.201803080745-r</jgit.version>-->
         <jgit.version>5.13.0.202109080827-r</jgit.version>
         <java.version>11</java.version>
         <jsch.version>0.1.54</jsch.version>
-<!--        -->
+        <spring-cloud.version>2020.0.4</spring-cloud.version>
         <lucene.version>8.6.2</lucene.version>
         <jsoup.version>1.13.1</jsoup.version>
         <artifactory-maven-plugin.version>3.2.3</artifactory-maven-plugin.version>
@@ -44,6 +43,12 @@
             <artifactId>lucene-queries</artifactId>
             <version>${lucene.version}</version>
         </dependency>
+        <!--
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-gateway</artifactId>
+        </dependency>
+               -->
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
@@ -63,12 +68,12 @@
             <artifactId>lucene-spring-boot-starter</artifactId>
             <version>0.0.1-SNAPSHOT</version>
         </dependency>
-   <!--  <dependency>
-            <groupId>com.joshlong</groupId>
-            <artifactId>git-spring-boot-starter</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
-        </dependency>-->
-         <dependency>
+        <!--  <dependency>
+                 <groupId>com.joshlong</groupId>
+                 <artifactId>git-spring-boot-starter</artifactId>
+                 <version>0.0.1-SNAPSHOT</version>
+             </dependency>-->
+        <dependency>
             <groupId>org.eclipse.jgit</groupId>
             <artifactId>org.eclipse.jgit</artifactId>
             <version>${jgit.version}</version>
@@ -96,8 +101,19 @@
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
-    
+
     </dependencies>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
