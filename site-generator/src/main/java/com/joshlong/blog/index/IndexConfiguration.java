@@ -15,8 +15,8 @@ import org.springframework.context.event.EventListener;
 
 import java.text.DateFormat;
 
-@Configuration
 @Log4j2
+@Configuration
 class IndexConfiguration {
 
 	private final DateFormat dateFormat;
@@ -31,8 +31,8 @@ class IndexConfiguration {
 	}
 
 	@EventListener
-	public void indexStopped(IndexingFinishedEvent finishedEvent) {
-		log.info("index build stopped " + this.dateFormat.format(finishedEvent.getSource()));
+	public void indexFinished(IndexingFinishedEvent finishedEvent) {
+		log.info("index build finished " + this.dateFormat.format(finishedEvent.getSource()));
 	}
 
 	@Bean
