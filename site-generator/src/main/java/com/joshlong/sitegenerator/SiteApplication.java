@@ -5,12 +5,16 @@ import com.joshlong.lucene.LuceneTemplate;
 import com.joshlong.templates.MarkdownService;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import org.aopalliance.intercept.MethodInterceptor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.Term;
 import org.eclipse.jgit.api.Git;
 import org.jsoup.Jsoup;
+import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -34,13 +38,17 @@ import org.springframework.util.FileSystemUtils;
 import reactor.core.publisher.Mono;
 
 import java.io.*;
+import java.lang.annotation.*;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -68,14 +76,15 @@ public class SiteApplication {
 
 @Log4j2
 @Controller
-class ApiController {
+class ApiGraphQlController {
 
 	private final IndexService indexService;
 
-	private final ThreadLocal<SimpleDateFormat> dateFormat = new ThreadLocal<>();
+	private final DateFormat isoDateFormat;
 
-	ApiController(IndexService indexService) {
+	ApiGraphQlController(IndexService indexService, DateFormat isoDateFormat) {
 		this.indexService = indexService;
+		this.isoDateFormat = isoDateFormat;
 	}
 
 	@QueryMapping
@@ -92,8 +101,7 @@ class ApiController {
 
 	@MutationMapping
 	IndexRebuildStatus rebuildIndex() {
-		var count = this.indexService.rebuildIndex().size();
-		return new IndexRebuildStatus(count, new Date());
+		return this.indexService.rebuildIndex();
 	}
 
 	@QueryMapping
@@ -103,28 +111,17 @@ class ApiController {
 
 	@SchemaMapping(typeName = "BlogPost", field = "date")
 	String date(BlogPost bp) {
-		return ensureDateFormat().format(bp.date());
-	}
-
-	private SimpleDateFormat ensureDateFormat() {
-		if (this.dateFormat.get() == null) {
-			var tz = TimeZone.getTimeZone("UTC");
-			var df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
-			/* Quoted "Z" to indicate UTC, no timezone offset */
-			df.setTimeZone(tz);
-			this.dateFormat.set(df);
-		}
-		return this.dateFormat.get();
+		return isoDateFormat.format(bp.date());
 	}
 
 	@SchemaMapping(typeName = "IndexRebuildStatus", field = "date")
 	String indexRebuildStatusDate(IndexRebuildStatus rebuildStatus) {
-		return ensureDateFormat().format(rebuildStatus.date());
+		return isoDateFormat.format(rebuildStatus.date());
 	}
 
 }
 
-record IndexRebuildStatus(int indexSize, Date date) {
+record IndexRebuildStatus(int entries, Date date) {
 }
 
 @ConstructorBinding
@@ -144,8 +141,8 @@ class BlogConfiguration {
 	}
 
 	@Bean
-	BlogPostService blogService(MarkdownService markdownService) {
-		return new DefaultBlogPostService(markdownService);
+	BlogPostService blogService(MarkdownService markdownService, @SimpleDateDateFormat DateFormat simpleDateFormat) {
+		return new DefaultBlogPostService(markdownService, simpleDateFormat);
 	}
 
 }
@@ -157,18 +154,19 @@ enum BlogPostContentType {
 }
 
 record BlogPost(String title, Date date, String originalContent, String processedContent, boolean published,
-		BlogPostContentType type, String path) {
+		BlogPostContentType type, String path, List<String> images) {
 }
 
 @Log4j2
 class DefaultBlogPostService implements BlogPostService {
 
-	private final ThreadLocal<SimpleDateFormat> simpleDateFormatThreadLocal = new ThreadLocal<>();
-
 	private final MarkdownService markdownService;
 
-	DefaultBlogPostService(MarkdownService markdownService) {
+	private final DateFormat simpleDateFormat;
+
+	DefaultBlogPostService(MarkdownService markdownService, DateFormat simpleDateFormat) {
 		this.markdownService = markdownService;
+		this.simpleDateFormat = simpleDateFormat;
 	}
 
 	@SneakyThrows
@@ -182,13 +180,32 @@ class DefaultBlogPostService implements BlogPostService {
 	@SneakyThrows
 	@Override
 	public BlogPost buildBlogPostFrom(String path, File file) {
-		log.info("------");
-		log.info("indexing " + file.getAbsolutePath() + " with path " + path);
+		if (log.isDebugEnabled()) {
+			log.debug("------");
+			log.debug("indexing " + file.getAbsolutePath() + " with path " + path);
+		}
 		Assert.notNull(file, () -> "the file must not be null");
 		Assert.state(file.exists(), () -> "the file " + file.getAbsolutePath() + " does not exist!");
 		var type = file.getName().toLowerCase(Locale.ROOT).endsWith(".md") ? BlogPostContentType.MD
 				: BlogPostContentType.HTML;
 		return buildBlogPostFrom(type, path, new FileInputStream(file));
+	}
+
+	/*
+	 * Given the HTML, we can use JSoup to discover the source attributes for all images
+	 * in the markup
+	 */
+	private List<String> discoverImages(String html) {
+		var results = new ArrayList<String>();
+		var document = Jsoup.parse(html);
+		var images = document.getElementsByTag("img");
+		if (images != null && images.size() > 0) {
+			images.forEach(element -> {
+				if (element.hasAttr("src"))
+					results.add(element.attr("src"));
+			});
+		}
+		return results;
 	}
 
 	@SneakyThrows
@@ -202,16 +219,14 @@ class DefaultBlogPostService implements BlogPostService {
 		var date = buildHeaderDate(dateFromHeaderString);
 		var processedContent = this.markdownService.convertMarkdownTemplateToHtml(parts[1]);
 		var published = header.get("status").toLowerCase(Locale.ROOT).equalsIgnoreCase("published");
-		return new BlogPost(header.get("title"), date, contents, processedContent, published, type, path);
+		var images = discoverImages(processedContent);
+		return new BlogPost(header.get("title"), date, contents, processedContent, published, type, path, images);
 	}
 
 	@SneakyThrows
 	private Date buildHeaderDate(String date) {
-		if (simpleDateFormatThreadLocal.get() == null) {
-			simpleDateFormatThreadLocal.set(new SimpleDateFormat("y-M-d"));
-		}
 		Assert.state(3 == date.split("-").length, () -> "there should be 3 parts to the date");
-		return simpleDateFormatThreadLocal.get().parse(date);
+		return this.simpleDateFormat.parse(date);
 	}
 
 	@SneakyThrows
@@ -224,6 +239,120 @@ class DefaultBlogPostService implements BlogPostService {
 				map.put((String) key, (props.getProperty((String) key) + "").trim());
 			return map;
 		}
+	}
+
+}
+
+@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.TYPE, ElementType.ANNOTATION_TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+@Documented
+@Qualifier("isoDateFormat")
+@interface IsoDateFormat {
+
+}
+
+@Target({ ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.TYPE, ElementType.ANNOTATION_TYPE })
+@Retention(RetentionPolicy.RUNTIME)
+@Inherited
+@Documented
+@Qualifier("simpleDateDateFormat")
+@interface SimpleDateDateFormat {
+
+}
+
+@Log4j2
+@Configuration
+class DateFormatConfiguration {
+
+	@Bean
+	@IsoDateFormat
+	DateFormat isoDateFormat() {
+		return DateFormatUtils.getThreadsafeIsoDateTimeDateFormat();
+	}
+
+	@Bean
+	@SimpleDateDateFormat
+	DateFormat simpleDateDateFormat() {
+		return DateFormatUtils.getThreadSafeSimpleDateDateFormat();
+	}
+
+}
+
+@Log4j2
+abstract class ThreadLocalUtils {
+
+	private static final Map<String, ThreadLocal<Object>> threadLocalMap = new ConcurrentHashMap<>();
+
+	public static <T> T buildThreadLocalObject(String beanName, Class<T> clazz, Supplier<T> supplier) {
+
+		var pfb = new ProxyFactory();
+		for (var i : clazz.getInterfaces()) {
+			pfb.addInterface(i);
+		}
+		pfb.setTarget(supplier.get());
+		pfb.setTargetClass(clazz);
+		pfb.setProxyTargetClass(true);
+		pfb.addAdvice((MethodInterceptor) invocation -> {
+			log.debug("invoking " + invocation.getMethod().getName() + " for beanName " + beanName + " on thread "
+					+ Thread.currentThread().getName() + '.');
+			var tl = threadLocalMap.computeIfAbsent(beanName, s -> new ThreadLocal<>());
+			if (tl.get() == null) {
+				log.debug("There is no bean instance of type " + clazz.getName() + " " + "on the thread "
+						+ Thread.currentThread().getName() + ". " + "Constructing an instance by calling the supplier");
+				tl.set(supplier.get());
+			}
+			log.debug(
+					"fetching an instance of " + clazz.getName() + " for the thread " + Thread.currentThread().getName()
+							+ " and there are " + threadLocalMap.size() + " thread local(s)");
+			var obj = tl.get();
+			var method = invocation.getMethod();
+			return method.invoke(obj, invocation.getArguments());
+		});
+
+		return (T) pfb.getProxy();
+	}
+
+}
+
+/**
+ * Dates. What even. Ammirite?
+ */
+@Log4j2
+abstract class DateFormatUtils {
+
+	/*
+	 * I want to use java.text.SimpleDateFormat.class directly in the proxies, but I get
+	 * oddities related to modules, so this seems to be a workaround.
+	 */
+	static class SiteSimpleDateFormat extends SimpleDateFormat {
+
+		public SiteSimpleDateFormat(String pattern) {
+			super(pattern);
+		}
+
+	}
+
+	public static SimpleDateFormat getThreadsafeIsoDateTimeDateFormat() {
+		return ThreadLocalUtils.buildThreadLocalObject("isoDateTimeDateFormat", SiteSimpleDateFormat.class,
+				() -> (SiteSimpleDateFormat) getIsoDateTimeDateFormat());
+	}
+
+	public static SimpleDateFormat getThreadSafeSimpleDateDateFormat() {
+		return ThreadLocalUtils.buildThreadLocalObject("simpleDateDateFormat", SiteSimpleDateFormat.class,
+				() -> (SiteSimpleDateFormat) getSimpleDateDateFormat());
+	}
+
+	private static SimpleDateFormat getIsoDateTimeDateFormat() {
+		/* Quoted "Z" to indicate UTC, no timezone offset */
+		var tz = TimeZone.getTimeZone("UTC");
+		var df = new SiteSimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+		df.setTimeZone(tz);
+		return df;
+	}
+
+	private static SimpleDateFormat getSimpleDateDateFormat() {
+		return new SiteSimpleDateFormat("y-M-d");
 	}
 
 }
@@ -250,8 +379,9 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 
 	private final boolean resetOnRebuild;
 
-	private final Set<String> extensions = Arrays.stream(BlogPostContentType.values())
-			.map(contentType -> contentType.name().toLowerCase(Locale.ROOT)).collect(Collectors.toSet());
+	private final Set<String> extensions = Arrays.stream(BlogPostContentType.values())//
+			.map(contentType -> contentType.name().toLowerCase(Locale.ROOT))//
+			.collect(Collectors.toSet());
 
 	@SneakyThrows
 	DefaultIndexService(ApplicationEventPublisher publisher, BlogPostService blogPostService,
@@ -287,7 +417,7 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 	}
 
 	@Override
-	public Map<String, BlogPost> rebuildIndex() {
+	public IndexRebuildStatus rebuildIndex() {
 
 		this.ensureClonedRepository();
 
@@ -295,8 +425,10 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 			this.index.clear();
 			this.index.putAll(this.buildIndex());
 		}
-		this.publisher.publishEvent(new IndexingFinishedEvent());
-		return this.index;
+		var now = new Date();
+		this.publisher.publishEvent(new IndexingFinishedEvent(now));
+		return new IndexRebuildStatus(this.index.size(), now);
+
 	}
 
 	@Override
@@ -394,7 +526,7 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 
 interface IndexService {
 
-	Map<String, BlogPost> rebuildIndex();
+	IndexRebuildStatus rebuildIndex();
 
 	Collection<BlogPost> search(String query);
 
@@ -404,21 +536,14 @@ interface IndexService {
 
 interface BlogPostService {
 
-	// BlogPost buildBlogPostFrom(BlogPostContentType type, String path, String
-	// contents);
-
-	// BlogPost buildBlogPostFrom(BlogPostContentType type, Resource r);
-
-	// BlogPost buildBlogPostFrom(BlogPostContentType type, InputStream file);
-
 	BlogPost buildBlogPostFrom(String path, File file);
 
 }
 
 class IndexingFinishedEvent extends ApplicationEvent {
 
-	public IndexingFinishedEvent() {
-		super(new Date());
+	public IndexingFinishedEvent(Date date) {
+		super(date);
 	}
 
 }

@@ -5,7 +5,7 @@ type Query {
 }
 
 type IndexRebuildStatus  {
-    indexSize : Int
+    entries : Int
     date : String
 }
 
@@ -20,6 +20,8 @@ type BlogPost {
     originalContent : String
     processedContent: String
     type: BlogPostContentType
+    path : String
+    images : [String]
 }
 
 enum BlogPostContentType {
