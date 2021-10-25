@@ -75,7 +75,6 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 				.getRepository();
 
 		try (var git = new Git(repo)) {
-			// Equivalent of --> $ git branch -a
 			var status = git.status().call();
 			log.info("the status is " + status.toString());
 		}
