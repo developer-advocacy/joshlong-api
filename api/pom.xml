@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.joshlong</groupId>
-    <artifactId>site-generator</artifactId>
+    <artifactId>api</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>site-generator</name>
-    <description>Demo project for Spring Boot</description>
+    <name>api</name>
+    <description>API for the joshlong.com blog</description>
     <properties>
         <jgit.version>5.13.0.202109080827-r</jgit.version>
         <java.version>11</java.version>
