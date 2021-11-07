@@ -12,6 +12,10 @@ import java.text.DateFormat;
 import java.util.Collection;
 import java.util.Locale;
 
+// todo to support this view of the blogs, we'll need to develop a feature on the server-side that shows us
+//        the first paragraph or the first N characters, whichever is fewer, in a given blog. We can look at the <P>
+//        tags, perhaps using the JSOUP parsing, take the first one, and then truncate all but the first N characters of that?
+//        We need this for the 'recent-posts' section of the front page
 @Log4j2
 @Controller
 class ApiGraphQlController {
