@@ -2,6 +2,7 @@ type Query {
     search (query: String) : [BlogPost]
     blogPostByPath (path: String) : BlogPost
     blogPosts: [BlogPost]
+    recentBlogPosts (count: Int) : [BlogPost]
 }
 
 type IndexRebuildStatus  {

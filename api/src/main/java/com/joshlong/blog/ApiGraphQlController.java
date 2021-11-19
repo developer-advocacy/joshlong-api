@@ -6,11 +6,16 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
 import java.text.DateFormat;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Locale;
+import java.util.function.Function;
+import java.util.function.ToLongFunction;
+import java.util.stream.Collectors;
 
 // todo to support this view of the blogs, we'll need to develop a feature on the server-side that shows us
 //        the first paragraph or the first N characters, whichever is fewer, in a given blog. We can look at the <P>
@@ -20,45 +25,56 @@ import java.util.Locale;
 @Controller
 class ApiGraphQlController {
 
-	private final IndexService indexService;
+    private final IndexService indexService;
 
-	private final DateFormat isoDateFormat;
+    private final DateFormat isoDateFormat;
 
-	ApiGraphQlController(IndexService indexService, DateFormat isoDateFormat) {
-		this.indexService = indexService;
-		this.isoDateFormat = isoDateFormat;
-	}
+    ApiGraphQlController(IndexService indexService, DateFormat isoDateFormat) {
+        this.indexService = indexService;
+        this.isoDateFormat = isoDateFormat;
+    }
 
-	@QueryMapping
-	Collection<BlogPost> blogPosts() {
-		return this.indexService.getIndex().values();
-	}
+    @QueryMapping
+    Collection<BlogPost> recentBlogPosts(@Argument int count) {
+        var index = this.indexService.getIndex();
+        var blogs = index.values();
+        return blogs
+                .stream()
+                .sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed())
+                .limit(count)
+                .collect(Collectors.toList());
+    }
 
-	@QueryMapping
-	Mono<BlogPost> blogPostByPath(@Argument String path) {
-		var index = this.indexService.getIndex();
-		var nk = path.toLowerCase(Locale.ROOT);
-		return index.containsKey(nk) ? Mono.just(index.get(nk)) : Mono.empty();
-	}
+    @QueryMapping
+    Collection<BlogPost> blogPosts() {
+        return this.indexService.getIndex().values();
+    }
 
-	@MutationMapping
-	IndexRebuildStatus rebuildIndex() {
-		return this.indexService.rebuildIndex();
-	}
+    @QueryMapping
+    Mono<BlogPost> blogPostByPath(@Argument String path) {
+        var index = this.indexService.getIndex();
+        var nk = path.toLowerCase(Locale.ROOT);
+        return index.containsKey(nk) ? Mono.just(index.get(nk)) : Mono.empty();
+    }
 
-	@QueryMapping
-	Collection<BlogPost> search(@Argument String query) {
-		return this.indexService.search(query);
-	}
+    @MutationMapping
+    IndexRebuildStatus rebuildIndex() {
+        return this.indexService.rebuildIndex();
+    }
 
-	@SchemaMapping(typeName = "BlogPost", field = "date")
-	String date(BlogPost bp) {
-		return isoDateFormat.format(bp.date());
-	}
+    @QueryMapping
+    Collection<BlogPost> search(@Argument String query) {
+        return this.indexService.search(query);
+    }
 
-	@SchemaMapping(typeName = "IndexRebuildStatus", field = "date")
-	String indexRebuildStatusDate(IndexRebuildStatus rebuildStatus) {
-		return isoDateFormat.format(rebuildStatus.date());
-	}
+    @SchemaMapping(typeName = "BlogPost", field = "date")
+    String date(BlogPost bp) {
+        return isoDateFormat.format(bp.date());
+    }
+
+    @SchemaMapping(typeName = "IndexRebuildStatus", field = "date")
+    String indexRebuildStatusDate(IndexRebuildStatus rebuildStatus) {
+        return isoDateFormat.format(rebuildStatus.date());
+    }
 
 }
