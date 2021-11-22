@@ -10,6 +10,7 @@ import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 
+import java.util.Arrays;
 import java.util.stream.Stream;
 
 /**
@@ -38,8 +39,10 @@ public class SiteApplication {
         @Override
         public void addCorsMappings(CorsRegistry corsRegistry) {
             var methods = Stream.of(HttpMethod.values()).map(Enum::name).toArray(String[]::new);
-            corsRegistry.addMapping("/graphql")
-                    .allowedOrigins("http://localhost:8081")
+            log.info("the methods are :" + String.join(", ", methods));
+            corsRegistry
+                    .addMapping("/**")
+                    .allowedOrigins("http://192.168.4.218:8081", "http://127.0.0.1:8081", "http://localhost:8081")
                     .allowedMethods(methods)
                     .maxAge(3600);
         }

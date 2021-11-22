@@ -6,15 +6,18 @@ import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
 import java.text.DateFormat;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Locale;
 import java.util.function.Function;
 import java.util.function.ToLongFunction;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 // todo to support this view of the blogs, we'll need to develop a feature on the server-side that shows us
@@ -25,9 +28,12 @@ import java.util.stream.Collectors;
 @Controller
 class ApiGraphQlController {
 
+    private final int heroParagraphLength = 400;
+
     private final IndexService indexService;
 
     private final DateFormat isoDateFormat;
+
 
     ApiGraphQlController(IndexService indexService, DateFormat isoDateFormat) {
         this.indexService = indexService;
@@ -75,6 +81,31 @@ class ApiGraphQlController {
     @SchemaMapping(typeName = "IndexRebuildStatus", field = "date")
     String indexRebuildStatusDate(IndexRebuildStatus rebuildStatus) {
         return isoDateFormat.format(rebuildStatus.date());
+    }
+
+    @SchemaMapping(typeName = "BlogPost")
+    String heroImage(BlogPost blogPost) {
+        return blogPost.images() != null && blogPost.images().size() > 0 ?
+                blogPost.images().get(0) : null;
+    }
+
+    @SchemaMapping(typeName = "BlogPost")
+    String heroParagraphs(BlogPost post) {
+        Assert.state(post.paragraphs() != null, () -> "the paragraphs must be non-null");
+        var ctr = 0;
+        var hold = new ArrayList<String>();
+        for (var p : post.paragraphs()) {
+            if ((ctr + p.length()) <= (this.heroParagraphLength)) {
+                hold.add(p);
+            } //
+            else {
+                break;
+            }
+            ctr += p.length();
+        }
+        return (hold.size() == 0) ?
+                post.paragraphs().get(0).substring(0, this.heroParagraphLength) :
+                String.join("", hold);
     }
 
 }

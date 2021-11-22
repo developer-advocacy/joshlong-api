@@ -23,7 +23,9 @@ type BlogPost {
     type: BlogPostContentType
     path : String
     images : [String]
-    openingParagraphs: [String]
+    paragraphs: [String]
+    heroParagraphs : String
+    heroImage  : String
 }
 
 enum BlogPostContentType {
