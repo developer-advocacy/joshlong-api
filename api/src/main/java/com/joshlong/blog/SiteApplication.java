@@ -32,8 +32,9 @@ import java.util.stream.Stream;
 @EnableConfigurationProperties(BlogProperties.class)
 public class SiteApplication {
 
-
-    /* TODO this needs to be rationalized. how do we plugin a dynamic origin? or at least consider using profiles? */
+    /*
+     * TODO this needs to be rationalized. how do we plugin a dynamic origin? or at least consider using profiles?
+     */
     @Log4j2
     @Configuration
     @EnableWebFlux
