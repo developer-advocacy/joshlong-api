@@ -76,6 +76,18 @@ class ApiGraphQlController {
         return this.indexService.search(query);
     }
 
+    //
+    @SchemaMapping(typeName = "Appearance", field = "startDate")
+    String startDate(Appearance bp) {
+        return isoDateFormat.format(bp.startDate());
+    }
+
+    @SchemaMapping(typeName = "Appearance", field = "endDate")
+    String endDate(Appearance bp) {
+        return isoDateFormat.format(bp.endDate());
+    }
+    //
+
     @SchemaMapping(typeName = "BlogPost", field = "date")
     String date(BlogPost bp) {
         return isoDateFormat.format(bp.date());

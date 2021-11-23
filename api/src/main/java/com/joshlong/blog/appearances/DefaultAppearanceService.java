@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.joshlong.blog.Appearance;
 import com.joshlong.blog.AppearanceService;
+import com.joshlong.blog.BlogPost;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.util.StringUtils;
@@ -13,7 +14,9 @@ import java.io.File;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -26,7 +29,10 @@ class DefaultAppearanceService implements AppearanceService {
 
     DefaultAppearanceService(File appearancesRoot, ObjectMapper objectMapper) throws Exception {
         var json = objectMapper.readValue(appearancesRoot, typeRef);
-        this.appearances = json.stream().map(this::buildAppearanceFrom).collect(Collectors.toList());
+        this.appearances = json.stream().map(this::buildAppearanceFrom)
+                .sorted(Comparator.comparingLong((ToLongFunction<Appearance>) value -> value.startDate().getTime()).reversed())
+                .collect(Collectors.toList());
+        ;
     }
 
     @Override
@@ -38,11 +44,8 @@ class DefaultAppearanceService implements AppearanceService {
 
         var divider = "/";
 
-        var validText = StringUtils.hasText(text) && text.contains(divider);
-
-        if (!validText)
+        if (!(StringUtils.hasText(text) && text.contains(divider)))
             return null;
-
 
         var parts = text.split(divider);
         var month = Integer.parseInt(parts[0]);
