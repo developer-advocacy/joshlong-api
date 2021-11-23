@@ -7,7 +7,6 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.Assert;
-import org.springframework.web.bind.annotation.RequestParam;
 import reactor.core.publisher.Mono;
 
 import java.text.DateFormat;
@@ -15,9 +14,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Locale;
-import java.util.function.Function;
 import java.util.function.ToLongFunction;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 // todo to support this view of the blogs, we'll need to develop a feature on the server-side that shows us
@@ -31,13 +28,19 @@ class ApiGraphQlController {
     private final int heroParagraphLength = 400;
 
     private final IndexService indexService;
-
+    private final AppearanceService appearanceService;
     private final DateFormat isoDateFormat;
 
 
-    ApiGraphQlController(IndexService indexService, DateFormat isoDateFormat) {
+    ApiGraphQlController(IndexService indexService, AppearanceService appearanceService, DateFormat isoDateFormat) {
         this.indexService = indexService;
+        this.appearanceService = appearanceService;
         this.isoDateFormat = isoDateFormat;
+    }
+
+    @QueryMapping
+    Collection<Appearance> appearances() {
+        return this.appearanceService.getAppearances();
     }
 
     @QueryMapping
