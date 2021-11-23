@@ -4,11 +4,13 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -29,6 +31,7 @@ import java.util.stream.Stream;
 @SpringBootApplication
 @EnableConfigurationProperties(BlogProperties.class)
 public class SiteApplication {
+
 
     /* TODO this needs to be rationalized. how do we plugin a dynamic origin? or at least consider using profiles? */
     @Log4j2

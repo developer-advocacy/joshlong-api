@@ -29,12 +29,13 @@ class ApiGraphQlController {
 
     private final IndexService indexService;
     private final AppearanceService appearanceService;
+    private final PodcastService podcastService;
     private final DateFormat isoDateFormat;
 
-
-    ApiGraphQlController(IndexService indexService, AppearanceService appearanceService, DateFormat isoDateFormat) {
+    ApiGraphQlController(IndexService indexService, AppearanceService appearanceService, PodcastService podcastService, DateFormat isoDateFormat) {
         this.indexService = indexService;
         this.appearanceService = appearanceService;
+        this.podcastService = podcastService;
         this.isoDateFormat = isoDateFormat;
     }
 
@@ -64,6 +65,18 @@ class ApiGraphQlController {
         var index = this.indexService.getIndex();
         var nk = path.toLowerCase(Locale.ROOT);
         return index.containsKey(nk) ? Mono.just(index.get(nk)) : Mono.empty();
+    }
+
+    @QueryMapping
+    Collection<Podcast> podcasts() {
+        return this.podcastService.getPodcasts();
+    }
+
+    @SchemaMapping(typeName = "Podcast", field = "date")
+    String date(Podcast p) {
+        if  (null!=p.date())
+        return this.isoDateFormat.format(p.date());
+        return null;
     }
 
     @MutationMapping

@@ -4,11 +4,22 @@ type Query {
     blogPosts: [BlogPost]
     recentBlogPosts (count: Int) : [BlogPost]
     appearances : [Appearance]
+    podcasts : [Podcast]
 }
 
 type IndexRebuildStatus  {
     entries : Int
     date : String
+}
+
+type Podcast {
+    id: ID
+    uid: ID
+    title: String
+    date: String
+    episodePhotoUri: String
+    episodeUri: String
+    description: String
 }
 
 type Mutation {
