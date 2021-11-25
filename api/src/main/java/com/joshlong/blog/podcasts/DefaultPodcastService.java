@@ -15,6 +15,7 @@ import org.springframework.util.StringUtils;
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
@@ -63,6 +64,7 @@ class DefaultPodcastService implements PodcastService {
                         var description = JsonUtils.valueOrNull(node, "description");
                         return new Podcast(id, uid, title, date, episodePhotoUri, episodeUri, description);
                     })
+                    .sorted(Comparator.comparing(Podcast::date).reversed())
                     .collect(Collectors.toList()));
         }
     }

@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.joshlong.blog.Appearance;
 import com.joshlong.blog.AppearanceService;
 import com.joshlong.blog.BlogPost;
+import com.joshlong.blog.index.IndexingFinishedEvent;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.context.event.EventListener;
 import org.springframework.util.StringUtils;
 
 import java.io.File;
@@ -16,22 +18,35 @@ import java.time.ZoneId;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 
 @Log4j2
 class DefaultAppearanceService implements AppearanceService {
 
-    private final Collection<Appearance> appearances;
+    private final Collection<Appearance> appearances = new CopyOnWriteArrayList<>();
     private final ZoneId defaultZoneId = ZoneId.systemDefault();
-    private final TypeReference<Collection<JsonNode>> typeRef = new TypeReference<Collection<JsonNode>>() {};
+    private final TypeReference<Collection<JsonNode>> typeRef = new TypeReference<Collection<JsonNode>>() {
+    };
+    private final File appearancesRoot;
+    private final ObjectMapper objectMapper;
 
     DefaultAppearanceService(File appearancesRoot, ObjectMapper objectMapper) throws Exception {
+        this.appearancesRoot = appearancesRoot;
+        this.objectMapper = objectMapper;
+    }
+
+    @EventListener(IndexingFinishedEvent.class)
+    public void indexingFinishedEvent() throws Exception {
         var json = objectMapper.readValue(appearancesRoot, this.typeRef);
-        this.appearances = json.stream() //
-                .map(this::buildAppearanceFrom)//
-                .sorted(Comparator.comparingLong((ToLongFunction<Appearance>) value -> value.startDate().getTime()).reversed())//
-                .collect(Collectors.toList());
+        synchronized (this.appearances) {
+            this.appearances.clear();
+            this.appearances.addAll(json.stream() //
+                    .map(this::buildAppearanceFrom)//
+                    .sorted(Comparator.comparingLong((ToLongFunction<Appearance>) value -> value.startDate().getTime()).reversed())//
+                    .collect(Collectors.toList()));
+        }
     }
 
     @Override

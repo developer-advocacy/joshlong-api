@@ -5,6 +5,13 @@ type Query {
     recentBlogPosts (count: Int) : [BlogPost]
     appearances : [Appearance]
     podcasts : [Podcast]
+    books: [Content]
+}
+
+type Content {
+    title: String
+    imageUrl: String
+    html: String
 }
 
 type IndexRebuildStatus  {

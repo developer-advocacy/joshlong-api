@@ -31,12 +31,16 @@ class ApiGraphQlController {
     private final AppearanceService appearanceService;
     private final PodcastService podcastService;
     private final DateFormat isoDateFormat;
+    private final ContentService booksContentService;
 
-    ApiGraphQlController(IndexService indexService, AppearanceService appearanceService, PodcastService podcastService, DateFormat isoDateFormat) {
+    ApiGraphQlController(IndexService indexService,
+                         ContentService contentService,
+                         AppearanceService appearanceService, PodcastService podcastService, DateFormat isoDateFormat) {
         this.indexService = indexService;
         this.appearanceService = appearanceService;
         this.podcastService = podcastService;
         this.isoDateFormat = isoDateFormat;
+        this.booksContentService = contentService;
     }
 
     @QueryMapping
@@ -53,6 +57,11 @@ class ApiGraphQlController {
                 .sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed())
                 .limit(count)
                 .collect(Collectors.toList());
+    }
+
+    @QueryMapping
+    Collection<Content> books() {
+        return this.booksContentService.getContent();
     }
 
     @QueryMapping
@@ -74,8 +83,8 @@ class ApiGraphQlController {
 
     @SchemaMapping(typeName = "Podcast", field = "date")
     String date(Podcast p) {
-        if  (null!=p.date())
-        return this.isoDateFormat.format(p.date());
+        if (null != p.date())
+            return this.isoDateFormat.format(p.date());
         return null;
     }
 
