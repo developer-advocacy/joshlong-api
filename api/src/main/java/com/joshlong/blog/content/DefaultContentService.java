@@ -42,7 +42,7 @@ class DefaultContentService implements ContentService {
 
     @EventListener(IndexingFinishedEvent.class)
     public void indexed() throws Exception {
-        log.info("building " + getClass().getName() + '.');
+        log.info("building " + getClass().getName()  + " for file " + this.resource.getFile().getAbsolutePath() + '.');
 
         var file = this.resource.getFile();
         var values = this.objectMapper.readValue(file, new TypeReference<Collection<JsonNode>>() {

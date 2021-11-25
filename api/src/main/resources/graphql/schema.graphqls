@@ -6,6 +6,7 @@ type Query {
     appearances : [Appearance]
     podcasts : [Podcast]
     books: [Content]
+    livelessons: [Content]
 }
 
 type Content {

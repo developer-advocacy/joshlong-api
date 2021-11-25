@@ -22,16 +22,14 @@ class ContentConfiguration {
     }
 
     @Bean
-    ContentService booksContentService(BlogProperties properties, ObjectMapper objectMapper) throws Exception {
+    ContentService booksContentService() throws Exception {
         return this.buildContentService("books.json");
     }
 
-/*
     @Bean
-    ContentService booksContentService(BlogProperties properties, ObjectMapper objectMapper) throws Exception {
-        return this.buildContentService(properties, objectMapper, "livelessons.json");
+    ContentService livelessonsContentService() throws Exception {
+        return this.buildContentService("livelessons.json");
     }
-*/
 
     private ContentService buildContentService(String fn) throws Exception {
         var file = new File(this.properties.localCloneDirectory().getFile(), "content/" + fn);

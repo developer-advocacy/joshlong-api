@@ -1,6 +1,7 @@
 package com.joshlong.blog;
 
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -32,15 +33,18 @@ class ApiGraphQlController {
     private final PodcastService podcastService;
     private final DateFormat isoDateFormat;
     private final ContentService booksContentService;
+    private final ContentService livelessonsContentService;
 
     ApiGraphQlController(IndexService indexService,
-                         ContentService contentService,
+                         @Qualifier("booksContentService") ContentService booksContentService,
+                         @Qualifier("livelessonsContentService") ContentService livelessonsContentService,
                          AppearanceService appearanceService, PodcastService podcastService, DateFormat isoDateFormat) {
         this.indexService = indexService;
         this.appearanceService = appearanceService;
         this.podcastService = podcastService;
         this.isoDateFormat = isoDateFormat;
-        this.booksContentService = contentService;
+        this.booksContentService = booksContentService;
+        this.livelessonsContentService = livelessonsContentService;
     }
 
     @QueryMapping
@@ -57,6 +61,11 @@ class ApiGraphQlController {
                 .sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed())
                 .limit(count)
                 .collect(Collectors.toList());
+    }
+
+    @QueryMapping
+    Collection<Content> livelessons() {
+        return this.livelessonsContentService.getContent();
     }
 
     @QueryMapping
