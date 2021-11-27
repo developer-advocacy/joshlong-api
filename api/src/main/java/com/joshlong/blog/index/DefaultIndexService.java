@@ -84,22 +84,25 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
             var status = git.status().call();
             log.info("the status is " + status.toString());
         }
-
     }
-
 
     @Override
     @EventListener(SiteUpdatedEvent.class)
     public IndexRebuildStatus rebuildIndex() {
         log.info("refreshing " + IndexService.class.getName());
+        Assert.notNull(this.root, () -> "you must specify a valid root ");
         this.publisher.publishEvent(new IndexingStartedEvent(new Date()));
         this.ensureClonedRepository();
-
+        Assert.state(this.root.exists() && Objects.requireNonNull(this.root.list()).length > 0,
+                () -> "there's no cloned repository under the root " + this.root.getAbsolutePath() + '.');
         synchronized (this.monitor) {
             this.index.clear();
             this.index.putAll(this.buildIndex());
         }
         var now = new Date();
+
+        Assert.state(this.index.size() > 0, () -> "there are no entries in the content index. " +
+                "Something's wrong! Ensure you have content registered.");
         this.publisher.publishEvent(new IndexingFinishedEvent(now));
         return new IndexRebuildStatus(this.index.size(), now);
 
