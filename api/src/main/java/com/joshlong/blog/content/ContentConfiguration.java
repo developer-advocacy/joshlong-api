@@ -9,31 +9,32 @@ import org.springframework.core.io.FileSystemResource;
 
 import java.io.File;
 
-
 @Configuration
 class ContentConfiguration {
 
-    private final ObjectMapper objectMapper;
-    private final BlogProperties properties;
+	private final ObjectMapper objectMapper;
 
-    ContentConfiguration(BlogProperties properties, ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-        this.properties = properties;
-    }
+	private final BlogProperties properties;
 
-    @Bean
-    ContentService booksContentService() throws Exception {
-        return this.buildContentService("books.json");
-    }
+	ContentConfiguration(BlogProperties properties, ObjectMapper objectMapper) {
+		this.objectMapper = objectMapper;
+		this.properties = properties;
+	}
 
-    @Bean
-    ContentService livelessonsContentService() throws Exception {
-        return this.buildContentService("livelessons.json");
-    }
+	@Bean
+	ContentService booksContentService() throws Exception {
+		return this.buildContentService("books.json");
+	}
 
-    private ContentService buildContentService(String fn) throws Exception {
-        var file = new File(this.properties.localCloneDirectory().getFile(), "content/" + fn);
-        var fileResource = new FileSystemResource(file);
-        return new DefaultContentService(fileResource, this.objectMapper);
-    }
+	@Bean
+	ContentService livelessonsContentService() throws Exception {
+		return this.buildContentService("livelessons.json");
+	}
+
+	private ContentService buildContentService(String fn) throws Exception {
+		var file = new File(this.properties.localCloneDirectory().getFile(), "content/" + fn);
+		var fileResource = new FileSystemResource(file);
+		return new DefaultContentService(fileResource, this.objectMapper);
+	}
+
 }

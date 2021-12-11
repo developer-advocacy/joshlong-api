@@ -25,59 +25,67 @@ import java.util.stream.Collectors;
 @Log4j2
 class DefaultAppearanceService implements AppearanceService {
 
-    private final Collection<Appearance> appearances = new CopyOnWriteArrayList<>();
-    private final ZoneId defaultZoneId = ZoneId.systemDefault();
-    private final TypeReference<Collection<JsonNode>> typeRef = new TypeReference<Collection<JsonNode>>() {
-    };
-    private final File appearancesRoot;
-    private final ObjectMapper objectMapper;
+	private final Collection<Appearance> appearances = new CopyOnWriteArrayList<>();
 
-    DefaultAppearanceService(File appearancesRoot, ObjectMapper objectMapper) throws Exception {
-        this.appearancesRoot = appearancesRoot;
-        this.objectMapper = objectMapper;
-    }
+	private final ZoneId defaultZoneId = ZoneId.systemDefault();
 
-    @EventListener(IndexingFinishedEvent.class)
-    public void indexingFinishedEvent() throws Exception {
-        var json = objectMapper.readValue(appearancesRoot, this.typeRef);
-        synchronized (this.appearances) {
-            this.appearances.clear();
-            this.appearances.addAll(json.stream() //
-                    .map(this::buildAppearanceFrom)//
-                    .sorted(Comparator.comparingLong((ToLongFunction<Appearance>) value -> value.startDate().getTime()).reversed())//
-                    .collect(Collectors.toList()));
-        }
-    }
+	private final TypeReference<Collection<JsonNode>> typeRef = new TypeReference<Collection<JsonNode>>() {
+	};
 
-    @Override
-    public Collection<Appearance> getAppearances() {
-        return this.appearances;
-    }
+	private final File appearancesRoot;
 
-    private Date buildDateFrom(String text) {
-        var divider = "/";
-        if (!(StringUtils.hasText(text) && text.contains(divider))) {
-            return null;
-        }
-        var parts = text.split(divider);
-        var month = Integer.parseInt(parts[0]);
-        var date = Integer.parseInt(parts[1]);
-        var year = Integer.parseInt(parts[2]);
-        var localDate = LocalDate.of(year, month, date);
-        return Date.from(localDate.atStartOfDay(this.defaultZoneId).toInstant());
-    }
+	private final ObjectMapper objectMapper;
 
-    @SneakyThrows
-    private Appearance buildAppearanceFrom(JsonNode json) {
+	DefaultAppearanceService(File appearancesRoot, ObjectMapper objectMapper) throws Exception {
+		this.appearancesRoot = appearancesRoot;
+		this.objectMapper = objectMapper;
+	}
 
-        if (log.isDebugEnabled())
-            log.debug("the json node title is " + json.get("event") + " and the date were converting is " + json.get("start_date"));
+	@EventListener(IndexingFinishedEvent.class)
+	public void indexingFinishedEvent() throws Exception {
+		var json = objectMapper.readValue(appearancesRoot, this.typeRef);
+		synchronized (this.appearances) {
+			this.appearances.clear();
+			this.appearances.addAll(json.stream() //
+					.map(this::buildAppearanceFrom)//
+					.sorted(Comparator.comparingLong((ToLongFunction<Appearance>) value -> value.startDate().getTime())
+							.reversed())//
+					.collect(Collectors.toList()));
+		}
+	}
 
-        var startDate = json.get("start_date");
-        var endDate = json.get("end_date");
-        var time = json.get("time");
-        var event = json.get("event");
-        var marketing_blurb = json.get("marketing_blurb");
-        return new Appearance(event.textValue(), buildDateFrom(startDate.asText()), buildDateFrom(endDate.asText()), time.textValue(), marketing_blurb.textValue());
-    }
+	@Override
+	public Collection<Appearance> getAppearances() {
+		return this.appearances;
+	}
+
+	private Date buildDateFrom(String text) {
+		var divider = "/";
+		if (!(StringUtils.hasText(text) && text.contains(divider))) {
+			return null;
+		}
+		var parts = text.split(divider);
+		var month = Integer.parseInt(parts[0]);
+		var date = Integer.parseInt(parts[1]);
+		var year = Integer.parseInt(parts[2]);
+		var localDate = LocalDate.of(year, month, date);
+		return Date.from(localDate.atStartOfDay(this.defaultZoneId).toInstant());
+	}
+
+	@SneakyThrows
+	private Appearance buildAppearanceFrom(JsonNode json) {
+
+		if (log.isDebugEnabled())
+			log.debug("the json node title is " + json.get("event") + " and the date were converting is "
+					+ json.get("start_date"));
+
+		var startDate = json.get("start_date");
+		var endDate = json.get("end_date");
+		var time = json.get("time");
+		var event = json.get("event");
+		var marketing_blurb = json.get("marketing_blurb");
+		return new Appearance(event.textValue(), buildDateFrom(startDate.asText()), buildDateFrom(endDate.asText()),
+				time.textValue(), marketing_blurb.textValue());
+	}
+
 }

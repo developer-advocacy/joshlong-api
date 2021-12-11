@@ -32,28 +32,28 @@ import java.util.stream.Stream;
 @EnableConfigurationProperties(BlogProperties.class)
 public class SiteApplication {
 
-    /*
-     * TODO this needs to be rationalized. how do we plugin a dynamic origin? or at least consider using profiles?
-     */
-    @Log4j2
-    @Configuration
-    @EnableWebFlux
-    public static class CorsGlobalConfiguration implements WebFluxConfigurer {
+	/*
+	 * TODO this needs to be rationalized. how do we plugin a dynamic origin? or at least
+	 * consider using profiles?
+	 */
+	@Log4j2
+	@Configuration
+	@EnableWebFlux
+	public static class CorsGlobalConfiguration implements WebFluxConfigurer {
 
-        @Override
-        public void addCorsMappings(CorsRegistry corsRegistry) {
-            var methods = Stream.of(HttpMethod.values()).map(Enum::name).toArray(String[]::new);
-            log.info("the methods are :" + String.join(", ", methods));
-            corsRegistry
-                    .addMapping("/**")
-                    .allowedOrigins("http://192.168.4.218:8081", "http://127.0.0.1:8081", "http://localhost:8081")
-                    .allowedMethods(methods)
-                    .maxAge(3600);
-        }
-    }
+		@Override
+		public void addCorsMappings(CorsRegistry corsRegistry) {
+			var methods = Stream.of(HttpMethod.values()).map(Enum::name).toArray(String[]::new);
+			log.info("the methods are :" + String.join(", ", methods));
+			corsRegistry.addMapping("/**")
+					.allowedOrigins("http://192.168.4.218:8081", "http://127.0.0.1:8081", "http://localhost:8081")
+					.allowedMethods(methods).maxAge(3600);
+		}
 
-    public static void main(String[] args) {
-        SpringApplication.run(SiteApplication.class, args);
-    }
+	}
+
+	public static void main(String[] args) {
+		SpringApplication.run(SiteApplication.class, args);
+	}
 
 }

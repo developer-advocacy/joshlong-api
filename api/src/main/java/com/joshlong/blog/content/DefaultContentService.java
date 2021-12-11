@@ -21,48 +21,46 @@ import java.util.stream.Collectors;
 @Log4j2
 class DefaultContentService implements ContentService {
 
-    private final Resource resource;
-    private final ObjectMapper objectMapper;
-    private final List<Content> contents = new CopyOnWriteArrayList<>();
+	private final Resource resource;
 
-    DefaultContentService(Resource resource, ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-        this.resource = resource;
-    }
+	private final ObjectMapper objectMapper;
 
-    @Override
-    public Collection<Content> getContent() {
-        return this.contents;
-    }
+	private final List<Content> contents = new CopyOnWriteArrayList<>();
 
-    @SneakyThrows
-    private URL buildUrlFrom(String url) {
-        return new URL(url);
-    }
+	DefaultContentService(Resource resource, ObjectMapper objectMapper) {
+		this.objectMapper = objectMapper;
+		this.resource = resource;
+	}
 
-    @EventListener(IndexingFinishedEvent.class)
-    public void indexed() throws Exception {
-        log.info("building " + getClass().getName()  + " for file " + this.resource.getFile().getAbsolutePath() + '.');
+	@Override
+	public Collection<Content> getContent() {
+		return this.contents;
+	}
 
-        var file = this.resource.getFile();
-        var values = this.objectMapper.readValue(file, new TypeReference<Collection<JsonNode>>() {
-        });
-        var content = values
-                .stream()
-                .map(json -> {
-                    var title = JsonUtils.valueOrNull(json, "title");
-                    var html = JsonUtils.valueOrNull(json, "html");
-                    var imageUrl = buildUrlFrom(JsonUtils.valueOrNull(json, "imageUrl"));
-                    return new Content(title, html, imageUrl);
-                })
-                .collect(Collectors.toList());
+	@SneakyThrows
+	private URL buildUrlFrom(String url) {
+		return new URL(url);
+	}
 
-        synchronized (this.contents) {
-            this.contents.clear();
-            this.contents.addAll(content);
-        }
+	@EventListener(IndexingFinishedEvent.class)
+	public void indexed() throws Exception {
+		log.info("building " + getClass().getName() + " for file " + this.resource.getFile().getAbsolutePath() + '.');
 
+		var file = this.resource.getFile();
+		var values = this.objectMapper.readValue(file, new TypeReference<Collection<JsonNode>>() {
+		});
+		var content = values.stream().map(json -> {
+			var title = JsonUtils.valueOrNull(json, "title");
+			var html = JsonUtils.valueOrNull(json, "html");
+			var imageUrl = buildUrlFrom(JsonUtils.valueOrNull(json, "imageUrl"));
+			return new Content(title, html, imageUrl);
+		}).collect(Collectors.toList());
 
-    }
+		synchronized (this.contents) {
+			this.contents.clear();
+			this.contents.addAll(content);
+		}
+
+	}
+
 }
-

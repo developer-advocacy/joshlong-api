@@ -22,35 +22,36 @@ import java.io.File;
 @ResponseBody
 class MediaRestController {
 
-    private static final String MEDIA_URI_PREFIX = "/media";
+	private static final String MEDIA_URI_PREFIX = "/media";
 
-    private static final String MEDIA_URI = MEDIA_URI_PREFIX + "/**";
+	private static final String MEDIA_URI = MEDIA_URI_PREFIX + "/**";
 
-    private final File mediaRoot;
+	private final File mediaRoot;
 
-    MediaRestController(File root) {
-        this.mediaRoot = root;
-        log.debug("creating " + MediaRestController.class.getName() + " with media directory " + root.getAbsolutePath());
-    }
+	MediaRestController(File root) {
+		this.mediaRoot = root;
+		log.debug(
+				"creating " + MediaRestController.class.getName() + " with media directory " + root.getAbsolutePath());
+	}
 
-    @GetMapping(MEDIA_URI)
-    ResponseEntity<Resource> readMedia(ServerHttpRequest request) {
-        var path = request.getPath().toString().substring(MEDIA_URI_PREFIX.length());
-        var file = new File(this.mediaRoot, path);
-        if (!file.exists()) {
-            log.debug("media file " + file.getAbsolutePath() + " does not exist.");
-            return ResponseEntity //
-                    .notFound() //
-                    .build();
-        } //
-        else {
-            log.debug("reading media file " + file.getAbsolutePath());
-            var resource = new FileSystemResource(file);
-            return ResponseEntity.ok() //
-                    .contentType(MediaType.IMAGE_JPEG) //
-                    .header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*") //
-                    .body(resource);
-        }
-    }
+	@GetMapping(MEDIA_URI)
+	ResponseEntity<Resource> readMedia(ServerHttpRequest request) {
+		var path = request.getPath().toString().substring(MEDIA_URI_PREFIX.length());
+		var file = new File(this.mediaRoot, path);
+		if (!file.exists()) {
+			log.debug("media file " + file.getAbsolutePath() + " does not exist.");
+			return ResponseEntity //
+					.notFound() //
+					.build();
+		} //
+		else {
+			log.debug("reading media file " + file.getAbsolutePath());
+			var resource = new FileSystemResource(file);
+			return ResponseEntity.ok() //
+					.contentType(MediaType.IMAGE_JPEG) //
+					.header(HttpHeaders.ACCESS_CONTROL_ALLOW_ORIGIN, "*") //
+					.body(resource);
+		}
+	}
 
 }
