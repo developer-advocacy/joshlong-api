@@ -46,6 +46,7 @@ import java.util.stream.Stream;
 @EnableConfigurationProperties(BlogProperties.class)
 public class SiteApplication {
 
+
 	/**
 	 * TODO graalvm The autoconfiguration, as of Spring Native 1.0.0-SNAPSHOT in middle
 	 * December 2021, uses a {@link ResourcePatternResolver} which requires us to scour
@@ -74,6 +75,7 @@ public class SiteApplication {
 			throw new IllegalArgumentException("we could not find the schema files!");
 		}
 	}
+
 
 	/*
 	 * TODO this needs to be rationalized. how do we plugin a dynamic origin? or at least
