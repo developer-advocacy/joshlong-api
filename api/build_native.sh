@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
-mvn spring-javaformat:apply && mvn -Pnative -DskipTests=true clean package
+mvn -Pnative -DskipTests=true spring-javaformat:apply clean package && ./target/api
+

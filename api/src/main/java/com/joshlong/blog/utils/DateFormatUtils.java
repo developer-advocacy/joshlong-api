@@ -39,7 +39,7 @@ public abstract class DateFormatUtils {
 	 * I want to use java.text.SimpleDateFormat.class directly in the proxies, but I get
 	 * oddities related to modules, so this seems to be a workaround.
 	 */
-	static class SiteSimpleDateFormat extends SimpleDateFormat {
+	public static class SiteSimpleDateFormat extends SimpleDateFormat {
 
 		public SiteSimpleDateFormat(String pattern) {
 			super(pattern);

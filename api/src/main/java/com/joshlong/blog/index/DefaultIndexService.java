@@ -27,7 +27,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-class DefaultIndexService implements IndexService, ApplicationListener<ApplicationReadyEvent> {
+class DefaultIndexService
+		implements IndexService/* , ApplicationListener<ApplicationReadyEvent> */ {
 
 	private final static Log log = LogFactory.getLog(DefaultIndexService.class);
 
@@ -192,8 +193,8 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 		return false;
 	}
 
-	@Override
-	public void onApplicationEvent(ApplicationReadyEvent event) {
+	@EventListener(ApplicationReadyEvent.class)
+	public void onApplicationEvent() {
 		this.rebuildIndex();
 	}
 

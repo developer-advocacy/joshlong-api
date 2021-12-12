@@ -12,33 +12,39 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
+import org.springframework.stereotype.Component;
 
 import java.text.DateFormat;
 
 @Log4j2
 @Configuration
-class IndexConfiguration {
+public class IndexConfiguration {
 
-	private final DateFormat dateFormat;
+	@Component
+	public static class Listener {
 
-	IndexConfiguration(@IsoDateFormat DateFormat dateFormat) {
-		this.dateFormat = dateFormat;
-	}
+		private final DateFormat dateFormat;
 
-	@EventListener
-	public void indexStarted(IndexingStartedEvent startedEvent) {
-		log.info("index build started " + this.dateFormat.format(startedEvent.getSource()));
-	}
+		Listener(@IsoDateFormat DateFormat dateFormat) {
+			this.dateFormat = dateFormat;
+		}
 
-	@EventListener
-	public void indexFinished(IndexingFinishedEvent finishedEvent) {
-		log.info("index build finished " + this.dateFormat.format(finishedEvent.getSource()));
+		@EventListener
+		public void indexStarted(IndexingStartedEvent startedEvent) {
+			log.info("index build started " + this.dateFormat.format(startedEvent.getSource()));
+		}
+
+		@EventListener
+		public void indexFinished(IndexingFinishedEvent finishedEvent) {
+			log.info("index build finished " + this.dateFormat.format(finishedEvent.getSource()));
+		}
+
 	}
 
 	@Bean
-	@SneakyThrows
-	IndexService indexService(@SimpleDateDateFormat DateFormat simpleDateFormat, ApplicationEventPublisher publisher,
-			BlogProperties properties, BlogPostService blogPostService, LuceneTemplate luceneTemplate) {
+	public IndexService indexService(@SimpleDateDateFormat DateFormat simpleDateFormat,
+			ApplicationEventPublisher publisher, BlogProperties properties, BlogPostService blogPostService,
+			LuceneTemplate luceneTemplate) throws Exception {
 		return new DefaultIndexService(simpleDateFormat, publisher, blogPostService, luceneTemplate,
 				properties.gitRepository(), properties.localCloneDirectory().getFile(), properties.resetOnRebuild());
 	}

@@ -19,6 +19,7 @@ import org.springframework.graphql.execution.GraphQlSource;
 import org.springframework.graphql.execution.MissingSchemaException;
 import org.springframework.graphql.execution.RuntimeWiringConfigurer;
 import org.springframework.http.HttpMethod;
+import org.springframework.nativex.hint.ResourceHint;
 import org.springframework.util.StringUtils;
 import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.EnableWebFlux;
@@ -42,7 +43,7 @@ import java.util.stream.Stream;
  *
  * @author <a href="mailto:josh@joshlong.com">Josh Long</a>
  */
-
+@ResourceHint(patterns = "/org/commonmark/internal/util/entities.properties")
 @Slf4j
 @SpringBootApplication
 @EnableWebFlux
