@@ -1,3 +1,3 @@
-# Blog 
-1. given the content root, generate a parallel hierarchy of pages to feed into a static site generator 
-2. 
+# Blog API
+
+This application is an API for the various functions of my blog. It is backed by a Git repository and provides a Lucene index. 
