@@ -9,8 +9,9 @@ import java.io.IOException;
 @Configuration
 class PodcastConfiguration {
 
-    @Bean
-    DefaultPodcastService defaultPodcastService(ObjectMapper om) throws IOException {
-        return new DefaultPodcastService(om);
-    }
+	@Bean
+	DefaultPodcastService defaultPodcastService(ObjectMapper om) throws IOException {
+		return new DefaultPodcastService(om);
+	}
+
 }

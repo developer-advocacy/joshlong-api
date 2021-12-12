@@ -23,49 +23,49 @@ import java.util.stream.Collectors;
 @Log4j2
 class DefaultPodcastService implements PodcastService {
 
-    private final URL root = new URL("http://api.bootifulpodcast.fm");
-    private final URL uri = new URL(this.root + "/site/podcasts");
-    private final Collection<Podcast> podcasts = new CopyOnWriteArrayList<>();
-    private final ObjectMapper objectMapper;
-    private final Object monitor = new Object();
+	private final URL root = new URL("http://api.bootifulpodcast.fm");
 
-    DefaultPodcastService(ObjectMapper objectMapper) throws IOException {
-        this.objectMapper = objectMapper;
-        this.refresh();
-    }
+	private final URL uri = new URL(this.root + "/site/podcasts");
 
-    @Override
-    public Collection<Podcast> getPodcasts() {
-        return this.podcasts;
-    }
+	private final Collection<Podcast> podcasts = new CopyOnWriteArrayList<>();
 
-    @SneakyThrows
-    private URL buildUrlFrom(String url) {
-        return StringUtils.hasText(url) ? new URL(url) : null;
-    }
+	private final ObjectMapper objectMapper;
 
-    @EventListener(SiteUpdatedEvent.class)
-    public void refresh() throws IOException {
-        log.info("refreshing " + PodcastService.class.getName());
-        var response = objectMapper
-                .readValue(this.uri, new TypeReference<Collection<JsonNode>>() {
-                });
-        synchronized (this.monitor) {
-            this.podcasts.clear();
-            this.podcasts.addAll(response
-                    .stream()
-                    .map(node -> {
-                        var id = JsonUtils.valueOrNull(node, "id", Integer::parseInt);
-                        var uid = JsonUtils.valueOrNull(node, "uid");
-                        var title = JsonUtils.valueOrNull(node, "title");
-                        var date = new Date(node.get("date").longValue());
-                        var episodePhotoUri = JsonUtils.valueOrNull(node, "episodePhotoUri", this::buildUrlFrom);
-                        var episodeUri = JsonUtils.valueOrNull(node, "episodeUri", u -> buildUrlFrom(root + u));
-                        var description = JsonUtils.valueOrNull(node, "description");
-                        return new Podcast(id, uid, title, date, episodePhotoUri, episodeUri, description);
-                    })
-                    .sorted(Comparator.comparing(Podcast::date).reversed())
-                    .collect(Collectors.toList()));
-        }
-    }
+	private final Object monitor = new Object();
+
+	DefaultPodcastService(ObjectMapper objectMapper) throws IOException {
+		this.objectMapper = objectMapper;
+		this.refresh();
+	}
+
+	@Override
+	public Collection<Podcast> getPodcasts() {
+		return this.podcasts;
+	}
+
+	@SneakyThrows
+	private URL buildUrlFrom(String url) {
+		return StringUtils.hasText(url) ? new URL(url) : null;
+	}
+
+	@EventListener(SiteUpdatedEvent.class)
+	public void refresh() throws IOException {
+		log.info("refreshing " + PodcastService.class.getName());
+		var response = objectMapper.readValue(this.uri, new TypeReference<Collection<JsonNode>>() {
+		});
+		synchronized (this.monitor) {
+			this.podcasts.clear();
+			this.podcasts.addAll(response.stream().map(node -> {
+				var id = JsonUtils.valueOrNull(node, "id", Integer::parseInt);
+				var uid = JsonUtils.valueOrNull(node, "uid");
+				var title = JsonUtils.valueOrNull(node, "title");
+				var date = new Date(node.get("date").longValue());
+				var episodePhotoUri = JsonUtils.valueOrNull(node, "episodePhotoUri", this::buildUrlFrom);
+				var episodeUri = JsonUtils.valueOrNull(node, "episodeUri", u -> buildUrlFrom(root + u));
+				var description = JsonUtils.valueOrNull(node, "description");
+				return new Podcast(id, uid, title, date, episodePhotoUri, episodeUri, description);
+			}).sorted(Comparator.comparing(Podcast::date).reversed()).collect(Collectors.toList()));
+		}
+	}
+
 }

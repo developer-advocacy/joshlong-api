@@ -10,10 +10,12 @@ import java.io.File;
 @Configuration
 class AppearanceConfiguration {
 
-    @Bean
-    DefaultAppearanceService defaultAppearanceService(BlogProperties properties, ObjectMapper objectMapper) throws Exception {
-        var root = properties.localCloneDirectory().getFile();
-        var appearances = new File(new File(root, "content"), "appearances.json");
-        return new DefaultAppearanceService(appearances, objectMapper);
-    }
+	@Bean
+	DefaultAppearanceService defaultAppearanceService(BlogProperties properties, ObjectMapper objectMapper)
+			throws Exception {
+		var root = properties.localCloneDirectory().getFile();
+		var appearances = new File(new File(root, "content"), "appearances.json");
+		return new DefaultAppearanceService(appearances, objectMapper);
+	}
+
 }
