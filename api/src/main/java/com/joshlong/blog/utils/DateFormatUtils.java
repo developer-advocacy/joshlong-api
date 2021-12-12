@@ -12,15 +12,21 @@ import java.util.TimeZone;
 public abstract class DateFormatUtils {
 
 	public static SimpleDateFormat getThreadsafeIsoDateTimeDateFormat() {
-		return ThreadLocalUtils.buildThreadLocalObject("isoDateTimeDateFormat",
-				DateFormatUtils.SiteSimpleDateFormat.class,
-				() -> (DateFormatUtils.SiteSimpleDateFormat) getIsoDateTimeDateFormat());
+		/*
+		 * return ThreadLocalUtils.buildThreadLocalObject("isoDateTimeDateFormat",
+		 * DateFormatUtils.SiteSimpleDateFormat.class, () ->
+		 * (DateFormatUtils.SiteSimpleDateFormat) getIsoDateTimeDateFormat());
+		 */
+		return getIsoDateTimeDateFormat();
 	}
 
 	public static SimpleDateFormat getThreadSafeSimpleDateDateFormat() {
-		return ThreadLocalUtils.buildThreadLocalObject("simpleDateDateFormat",
-				DateFormatUtils.SiteSimpleDateFormat.class,
-				() -> (DateFormatUtils.SiteSimpleDateFormat) getSimpleDateDateFormat());
+		/*
+		 * return ThreadLocalUtils.buildThreadLocalObject("simpleDateDateFormat",
+		 * DateFormatUtils.SiteSimpleDateFormat.class, () ->
+		 * (DateFormatUtils.SiteSimpleDateFormat) getSimpleDateDateFormat());
+		 */
+		return getSimpleDateDateFormat();
 	}
 
 	private static SimpleDateFormat getIsoDateTimeDateFormat() {

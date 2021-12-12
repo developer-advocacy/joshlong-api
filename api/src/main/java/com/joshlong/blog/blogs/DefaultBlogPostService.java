@@ -5,9 +5,8 @@ import com.joshlong.blog.BlogPostContentType;
 import com.joshlong.blog.BlogPostService;
 import com.joshlong.templates.MarkdownService;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
-import org.jsoup.select.Elements;
 import org.springframework.util.Assert;
 import org.springframework.util.FileCopyUtils;
 
@@ -16,7 +15,7 @@ import java.text.DateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Log4j2
+@Slf4j
 class DefaultBlogPostService implements BlogPostService {
 
 	private final MarkdownService markdownService;

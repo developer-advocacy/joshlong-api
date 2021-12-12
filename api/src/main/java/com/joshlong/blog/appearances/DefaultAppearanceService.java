@@ -5,10 +5,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.joshlong.blog.Appearance;
 import com.joshlong.blog.AppearanceService;
-import com.joshlong.blog.BlogPost;
 import com.joshlong.blog.index.IndexingFinishedEvent;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.util.StringUtils;
 
@@ -22,7 +21,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.ToLongFunction;
 import java.util.stream.Collectors;
 
-@Log4j2
+@Slf4j
 class DefaultAppearanceService implements AppearanceService {
 
 	private final Collection<Appearance> appearances = new CopyOnWriteArrayList<>();

@@ -8,7 +8,7 @@ import com.joshlong.blog.ContentService;
 import com.joshlong.blog.index.IndexingFinishedEvent;
 import com.joshlong.blog.utils.JsonUtils;
 import lombok.SneakyThrows;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.io.Resource;
 
@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
-@Log4j2
+@Slf4j
 class DefaultContentService implements ContentService {
 
 	private final Resource resource;

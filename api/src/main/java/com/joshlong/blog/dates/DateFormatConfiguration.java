@@ -7,7 +7,6 @@ import org.springframework.context.annotation.Configuration;
 
 import java.text.DateFormat;
 
-@Log4j2
 @Configuration
 class DateFormatConfiguration {
 

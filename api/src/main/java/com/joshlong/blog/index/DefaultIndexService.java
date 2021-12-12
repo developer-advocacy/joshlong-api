@@ -12,7 +12,6 @@ import org.eclipse.jgit.api.Git;
 import org.jsoup.Jsoup;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.EventListener;
 import org.springframework.util.Assert;
 import org.springframework.util.FileSystemUtils;
@@ -87,8 +86,12 @@ class DefaultIndexService
 		}
 	}
 
-	@Override
 	@EventListener(SiteUpdatedEvent.class)
+	public void siteUpdatedEvent() {
+		rebuildIndex();
+	}
+
+	@Override
 	public IndexRebuildStatus rebuildIndex() {
 		log.info("refreshing " + IndexService.class.getName());
 		Assert.notNull(this.root, () -> "you must specify a valid root ");

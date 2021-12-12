@@ -1,6 +1,5 @@
 package com.joshlong.blog;
 
-import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
@@ -22,7 +21,6 @@ import java.util.stream.Collectors;
 //        the first paragraph or the first N characters, whichever is fewer, in a given blog. We can look at the <P>
 //        tags, perhaps using the JSOUP parsing, take the first one, and then truncate all but the first N characters of that?
 //        We need this for the 'recent-posts' section of the front page
-@Log4j2
 @Controller
 class ApiGraphQlController {
 

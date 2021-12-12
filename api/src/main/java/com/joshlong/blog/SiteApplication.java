@@ -1,14 +1,12 @@
 package com.joshlong.blog;
 
 import graphql.execution.instrumentation.Instrumentation;
-import lombok.extern.log4j.Log4j2;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.ResourcePatternResolver;
@@ -19,15 +17,15 @@ import org.springframework.graphql.execution.GraphQlSource;
 import org.springframework.graphql.execution.MissingSchemaException;
 import org.springframework.graphql.execution.RuntimeWiringConfigurer;
 import org.springframework.http.HttpMethod;
+import org.springframework.nativex.hint.NativeHint;
 import org.springframework.nativex.hint.ResourceHint;
-import org.springframework.util.StringUtils;
+import org.springframework.nativex.hint.TypeAccess;
+import org.springframework.nativex.hint.TypeHint;
 import org.springframework.web.reactive.config.CorsRegistry;
-import org.springframework.web.reactive.config.EnableWebFlux;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -43,26 +41,28 @@ import java.util.stream.Stream;
  *
  * @author <a href="mailto:josh@joshlong.com">Josh Long</a>
  */
-@ResourceHint(patterns = "/org/commonmark/internal/util/entities.properties")
+@NativeHint(
+		types = { @TypeHint(types = { Podcast.class },
+				access = { TypeAccess.DECLARED_CLASSES, TypeAccess.DECLARED_CONSTRUCTORS, TypeAccess.DECLARED_FIELDS,
+						TypeAccess.DECLARED_METHODS }), },
+		resources = { @ResourceHint(
+				patterns = { "/graphql/schema.graphqls", "/org/commonmark/internal/util/entities.properties" }) })
 @Slf4j
 @SpringBootApplication
-@EnableWebFlux
+// @EnableWebFlux
 @EnableConfigurationProperties(BlogProperties.class)
 public class SiteApplication {
 
 	@Bean
 	WebFluxConfigurer webFluxConfigurer(BlogProperties properties) {
 		return new WebFluxConfigurer() {
+
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
 				var methods = Stream.of(HttpMethod.values()).map(Enum::name).toArray(String[]::new);
-				log.info("the methods are :" + String.join(", ", methods));
+				log.info("the CORS methods are :" + String.join(", ", methods));
 				log.info("the CORS hosts are " + Arrays.toString(properties.corsHosts()));
-				registry//
-						.addMapping("/**") //
-						.allowedOrigins(properties.corsHosts())//
-						.allowedMethods(methods) //
-						.maxAge(3600);
+				registry.addMapping("/**").allowedOrigins(properties.corsHosts()).allowedMethods(methods).maxAge(3600);
 			}
 		};
 	}
@@ -81,7 +81,7 @@ public class SiteApplication {
 			ObjectProvider<GraphQlSourceBuilderCustomizer> sourceCustomizers,
 			ObjectProvider<RuntimeWiringConfigurer> wiringConfigurers) {
 		String location = properties.getSchema().getLocations()[0];
-		List<Resource> schemaResources = List.of(new ClassPathResource(location));
+		List<Resource> schemaResources = List.of(new ClassPathResource("/graphql/schema.graphqls"));
 		GraphQlSource.Builder builder = GraphQlSource.builder()
 				.schemaResources(schemaResources.toArray(new Resource[0]))
 				.exceptionResolvers(exceptionResolversProvider.orderedStream().collect(Collectors.toList()))
