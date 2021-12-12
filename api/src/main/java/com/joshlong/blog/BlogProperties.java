@@ -8,5 +8,6 @@ import java.net.URI;
 
 @ConstructorBinding
 @ConfigurationProperties("blog")
-public record BlogProperties(URI gitRepository, Resource localCloneDirectory, boolean resetOnRebuild) {
+public record BlogProperties(URI gitRepository, Resource localCloneDirectory, boolean resetOnRebuild,
+                             String[] corsHosts) {
 }

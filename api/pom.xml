@@ -93,7 +93,10 @@
         <dependency>
             <groupId>org.springframework.experimental</groupId>
             <artifactId>graphql-spring-boot-starter</artifactId>
-            <version>1.0.0-M3</version>
+<!--            <version>1.0.0-M3</version>-->
+            <!--todo -->
+            <version>1.0.0-SNAPSHOT</version>
+
         </dependency>
 
         <dependency>
