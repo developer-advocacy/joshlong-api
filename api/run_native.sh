@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
-export RE
+export BLOG_RESET_ON_REBUILD=true
+./target/api
