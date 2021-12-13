@@ -8,7 +8,11 @@ import java.util.TimeZone;
 /**
  * Dates. What even. Ammirite?
  */
-@Log4j2
+@Log4j2 // todo why does graalvm compilation of these beans result in so many danged
+		// instances?
+		// target/generated-sources/spring-aot/src/main/resources/com/joshlong/blog/utils/DateFormatUtils$SiteSimpleDateFormat$$SpringProxy$26a091dc$aux$2.class,
+		// and a zillion others just like it.
+
 public abstract class DateFormatUtils {
 
 	public static SimpleDateFormat getThreadsafeIsoDateTimeDateFormat() {

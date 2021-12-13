@@ -8,16 +8,22 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.Term;
+import org.commonmark.internal.util.Html5Entities;
 import org.eclipse.jgit.api.Git;
 import org.jsoup.Jsoup;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.event.EventListener;
+import org.springframework.context.ApplicationListener;
 import org.springframework.util.Assert;
+import org.springframework.util.FileCopyUtils;
 import org.springframework.util.FileSystemUtils;
 
 import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DateFormat;
@@ -26,8 +32,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-class DefaultIndexService
-		implements IndexService/* , ApplicationListener<ApplicationReadyEvent> */ {
+class DefaultIndexService implements IndexService, ApplicationListener<ApplicationEvent> {
 
 	private final static Log log = LogFactory.getLog(DefaultIndexService.class);
 
@@ -68,7 +73,7 @@ class DefaultIndexService
 
 	@SneakyThrows
 	private void ensureClonedRepository() {
-
+		log.info("should reset Git clone? " + this.resetOnRebuild);
 		if (!this.resetOnRebuild)
 			return;
 
@@ -86,11 +91,7 @@ class DefaultIndexService
 		}
 	}
 
-	@EventListener(SiteUpdatedEvent.class)
-	public void siteUpdatedEvent() {
-		rebuildIndex();
-	}
-
+	@SneakyThrows
 	@Override
 	public IndexRebuildStatus rebuildIndex() {
 		log.info("refreshing " + IndexService.class.getName());
@@ -104,7 +105,6 @@ class DefaultIndexService
 			this.index.putAll(this.buildIndex());
 		}
 		var now = new Date();
-
 		Assert.state(this.index.size() > 0, () -> "there are no entries in the content index. "
 				+ "Something's wrong! Ensure you have content registered.");
 		this.publisher.publishEvent(new IndexingFinishedEvent(now));
@@ -196,9 +196,11 @@ class DefaultIndexService
 		return false;
 	}
 
-	@EventListener(ApplicationReadyEvent.class)
-	public void onApplicationEvent() {
-		this.rebuildIndex();
+	@Override
+	public void onApplicationEvent(ApplicationEvent event) {
+		if (event instanceof SiteUpdatedEvent || event instanceof ApplicationReadyEvent) {
+			this.rebuildIndex();
+		}
 	}
 
 	static private record BlogPostKey(String path, BlogPost blogPost) {

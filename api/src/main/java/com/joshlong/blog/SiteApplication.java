@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
@@ -19,8 +20,6 @@ import org.springframework.graphql.execution.RuntimeWiringConfigurer;
 import org.springframework.http.HttpMethod;
 import org.springframework.nativex.hint.NativeHint;
 import org.springframework.nativex.hint.ResourceHint;
-import org.springframework.nativex.hint.TypeAccess;
-import org.springframework.nativex.hint.TypeHint;
 import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 
@@ -41,15 +40,9 @@ import java.util.stream.Stream;
  *
  * @author <a href="mailto:josh@joshlong.com">Josh Long</a>
  */
-@NativeHint(
-		types = { @TypeHint(types = { Podcast.class },
-				access = { TypeAccess.DECLARED_CLASSES, TypeAccess.DECLARED_CONSTRUCTORS, TypeAccess.DECLARED_FIELDS,
-						TypeAccess.DECLARED_METHODS }), },
-		resources = { @ResourceHint(
-				patterns = { "/graphql/schema.graphqls", "/org/commonmark/internal/util/entities.properties" }) })
+@ResourceHint(patterns = { "/graphql/schema.graphqls" })
 @Slf4j
 @SpringBootApplication
-// @EnableWebFlux
 @EnableConfigurationProperties(BlogProperties.class)
 public class SiteApplication {
 
