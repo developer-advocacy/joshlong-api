@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
@@ -18,8 +17,8 @@ import org.springframework.graphql.execution.GraphQlSource;
 import org.springframework.graphql.execution.MissingSchemaException;
 import org.springframework.graphql.execution.RuntimeWiringConfigurer;
 import org.springframework.http.HttpMethod;
-import org.springframework.nativex.hint.NativeHint;
 import org.springframework.nativex.hint.ResourceHint;
+import org.springframework.nativex.hint.TypeHint;
 import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 
@@ -27,6 +26,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.springframework.nativex.hint.TypeAccess.*;
 
 /**
  * This the GraphQL API for the new joshlong.com. Most o the endpoints are GraphQ the
@@ -40,8 +41,17 @@ import java.util.stream.Stream;
  *
  * @author <a href="mailto:josh@joshlong.com">Josh Long</a>
  */
-@ResourceHint(patterns = { "/graphql/schema.graphqls" })
+
+@TypeHint( //
+		access = { //
+				PUBLIC_CLASSES, PUBLIC_CONSTRUCTORS, PUBLIC_FIELDS, PUBLIC_METHODS, //
+				QUERY_DECLARED_CONSTRUCTORS, QUERY_PUBLIC_METHODS, QUERY_PUBLIC_CONSTRUCTORS, //
+				RESOURCE, //
+		}, //
+		types = { Podcast.class, BlogPostContentType.class, IndexRebuildStatus.class, Content.class, BlogPost.class,
+				Appearance.class })
 @Slf4j
+@ResourceHint(patterns = { "graphql/schema.graphqls", "graphiql/index.html" })
 @SpringBootApplication
 @EnableConfigurationProperties(BlogProperties.class)
 public class SiteApplication {
@@ -73,10 +83,8 @@ public class SiteApplication {
 			ObjectProvider<Instrumentation> instrumentationsProvider,
 			ObjectProvider<GraphQlSourceBuilderCustomizer> sourceCustomizers,
 			ObjectProvider<RuntimeWiringConfigurer> wiringConfigurers) {
-		String location = properties.getSchema().getLocations()[0];
-		List<Resource> schemaResources = List.of(new ClassPathResource("/graphql/schema.graphqls"));
-		GraphQlSource.Builder builder = GraphQlSource.builder()
-				.schemaResources(schemaResources.toArray(new Resource[0]))
+		var schemaResources = List.of(new ClassPathResource("/graphql/schema.graphqls"));
+		var builder = GraphQlSource.builder().schemaResources(schemaResources.toArray(new Resource[0]))
 				.exceptionResolvers(exceptionResolversProvider.orderedStream().collect(Collectors.toList()))
 				.instrumentation(instrumentationsProvider.orderedStream().collect(Collectors.toList()));
 		wiringConfigurers.orderedStream().forEach(builder::configureRuntimeWiring);
