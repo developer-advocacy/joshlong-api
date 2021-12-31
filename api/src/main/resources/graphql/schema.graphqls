@@ -42,6 +42,7 @@ type BlogPost {
     processedContent: String
     type: BlogPostContentType
     path : String
+    pathId: String
     images : [String]
     paragraphs: [String]
     heroParagraphs : String
