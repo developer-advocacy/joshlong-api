@@ -1,6 +1,7 @@
 package com.joshlong.blog.springtips;
 
-import com.joshlong.blog.dates.IsoDateFormat;
+import com.joshlong.blog.SpringTipsEpisode;
+import com.joshlong.blog.SpringTipsService;
 import com.joshlong.blog.dates.SimpleDateDateFormat;
 import com.joshlong.blog.index.IndexingFinishedEvent;
 import lombok.SneakyThrows;

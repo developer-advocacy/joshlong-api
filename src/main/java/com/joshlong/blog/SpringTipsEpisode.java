@@ -1,4 +1,4 @@
-package com.joshlong.blog.springtips;
+package com.joshlong.blog;
 
 import java.net.URI;
 import java.util.Date;

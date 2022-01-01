@@ -1,7 +1,5 @@
 package com.joshlong.blog;
 
-import com.joshlong.blog.springtips.SpringTipsEpisode;
-import com.joshlong.blog.springtips.SpringTipsService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.MutationMapping;
