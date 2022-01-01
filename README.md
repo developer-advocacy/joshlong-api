@@ -9,6 +9,7 @@ This application is an API for the various functions of my blog. It is backed by
 * figure out how to configure the Github Webhook for whenever the git repository is changed and the index needs to be rebuilt
 * figure out how 
 * pagination for the blog 
+* figure out monthly links or a dropdown so i can see all blogs from january 2012, or something like that?
 
 ## Some Useful Queries for Debugging 
 
