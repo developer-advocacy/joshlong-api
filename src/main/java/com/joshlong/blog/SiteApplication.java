@@ -45,66 +45,67 @@ import static org.springframework.nativex.hint.TypeAccess.*;
  */
 
 @TypeHint( //
-        access = { //
-                PUBLIC_CLASSES, PUBLIC_CONSTRUCTORS, PUBLIC_FIELDS, PUBLIC_METHODS, //
-                QUERY_DECLARED_CONSTRUCTORS, QUERY_PUBLIC_METHODS, QUERY_PUBLIC_CONSTRUCTORS, //
-                RESOURCE, //
-        }, //
-        types = {Podcast.class, BlogPostContentType.class, IndexRebuildStatus.class, Content.class, BlogPost.class,
-                Appearance.class, SpringTipsEpisode.class})
+		access = { //
+				PUBLIC_CLASSES, PUBLIC_CONSTRUCTORS, PUBLIC_FIELDS, PUBLIC_METHODS, //
+				QUERY_DECLARED_CONSTRUCTORS, QUERY_PUBLIC_METHODS, QUERY_PUBLIC_CONSTRUCTORS, //
+				RESOURCE, //
+		}, //
+		types = { Podcast.class, BlogPostContentType.class, IndexRebuildStatus.class, Content.class, BlogPost.class,
+				Appearance.class, SpringTipsEpisode.class })
 @Slf4j
-@ResourceHint(patterns = {"graphql/schema.graphqls", "graphiql/index.html"})
+@ResourceHint(patterns = { "graphql/schema.graphqls", "graphiql/index.html" })
 @SpringBootApplication
 @EnableConfigurationProperties(BlogProperties.class)
 public class SiteApplication {
 
-    @Bean
-    WebClient webClient(WebClient.Builder builder) {
-        return builder.build();
-    }
+	@Bean
+	WebClient webClient(WebClient.Builder builder) {
+		return builder.build();
+	}
 
-    @Bean
-    WebFluxConfigurer webFluxConfigurer(BlogProperties properties) {
-        return new WebFluxConfigurer() {
+	@Bean
+	WebFluxConfigurer webFluxConfigurer(BlogProperties properties) {
+		return new WebFluxConfigurer() {
 
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                var methods = Stream.of(HttpMethod.values()).map(Enum::name).toArray(String[]::new);
-                log.info("the CORS methods are :" + String.join(", ", methods));
-                log.info("the CORS hosts are " + Arrays.toString(properties.corsHosts()));
-                registry.addMapping("/**").allowedOrigins(properties.corsHosts()).allowedMethods(methods).maxAge(3600);
-            }
-        };
-    }
+			@Override
+			public void addCorsMappings(CorsRegistry registry) {
+				var methods = Stream.of(HttpMethod.values()).map(Enum::name).toArray(String[]::new);
+				log.info("the CORS methods are :" + String.join(", ", methods));
+				log.info("the CORS hosts are " + Arrays.toString(properties.corsHosts()));
+				registry.addMapping("/**").allowedOrigins(properties.corsHosts()).allowedMethods(methods).maxAge(3600);
+			}
+		};
+	}
 
-    /**
-     * TODO graalvm The autoconfiguration, as of Spring Native 1.0.0-SNAPSHOT in middle
-     * December 2021, uses a {@link ResourcePatternResolver} which requires us to scour
-     * the classpath for files. Trouble is, in a GraalVM application, there's no
-     * classpath, so that mechanism doesn't work. Hopefully we can remove this in the
-     * future. This works because we hardcode a single static {@link Resource}
-     */
-    @Bean
-    GraphQlSource graalvmCompatibleGraphqlSource(GraphQlProperties properties,
-                                                 ObjectProvider<DataFetcherExceptionResolver> exceptionResolversProvider,
-                                                 ObjectProvider<Instrumentation> instrumentationsProvider,
-                                                 ObjectProvider<GraphQlSourceBuilderCustomizer> sourceCustomizers,
-                                                 ObjectProvider<RuntimeWiringConfigurer> wiringConfigurers) {
-        var schemaResources = List.of(new ClassPathResource("/graphql/schema.graphqls"));
-        var builder = GraphQlSource.builder().schemaResources(schemaResources.toArray(new Resource[0]))
-                .exceptionResolvers(exceptionResolversProvider.orderedStream().collect(Collectors.toList()))
-                .instrumentation(instrumentationsProvider.orderedStream().collect(Collectors.toList()));
-        wiringConfigurers.orderedStream().forEach(builder::configureRuntimeWiring);
-        sourceCustomizers.orderedStream().forEach((customizer) -> customizer.customize(builder));
-        try {
-            return builder.build();
-        } catch (MissingSchemaException exc) {
-            throw new IllegalArgumentException("we could not find the schema files!");
-        }
-    }
+	/**
+	 * TODO graalvm The autoconfiguration, as of Spring Native 1.0.0-SNAPSHOT in middle
+	 * December 2021, uses a {@link ResourcePatternResolver} which requires us to scour
+	 * the classpath for files. Trouble is, in a GraalVM application, there's no
+	 * classpath, so that mechanism doesn't work. Hopefully we can remove this in the
+	 * future. This works because we hardcode a single static {@link Resource}
+	 */
+	@Bean
+	GraphQlSource graalvmCompatibleGraphqlSource(GraphQlProperties properties,
+			ObjectProvider<DataFetcherExceptionResolver> exceptionResolversProvider,
+			ObjectProvider<Instrumentation> instrumentationsProvider,
+			ObjectProvider<GraphQlSourceBuilderCustomizer> sourceCustomizers,
+			ObjectProvider<RuntimeWiringConfigurer> wiringConfigurers) {
+		var schemaResources = List.of(new ClassPathResource("/graphql/schema.graphqls"));
+		var builder = GraphQlSource.builder().schemaResources(schemaResources.toArray(new Resource[0]))
+				.exceptionResolvers(exceptionResolversProvider.orderedStream().collect(Collectors.toList()))
+				.instrumentation(instrumentationsProvider.orderedStream().collect(Collectors.toList()));
+		wiringConfigurers.orderedStream().forEach(builder::configureRuntimeWiring);
+		sourceCustomizers.orderedStream().forEach((customizer) -> customizer.customize(builder));
+		try {
+			return builder.build();
+		}
+		catch (MissingSchemaException exc) {
+			throw new IllegalArgumentException("we could not find the schema files!");
+		}
+	}
 
-    public static void main(String[] args) {
-        SpringApplication.run(SiteApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(SiteApplication.class, args);
+	}
 
 }

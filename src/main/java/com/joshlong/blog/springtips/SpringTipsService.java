@@ -4,7 +4,8 @@ import java.util.Collection;
 
 public interface SpringTipsService {
 
-    SpringTipsEpisode getLatestSpringTipsEpisode();
+	SpringTipsEpisode getLatestSpringTipsEpisode();
 
-    Collection<SpringTipsEpisode> getSpringTipsEpisodes();
+	Collection<SpringTipsEpisode> getSpringTipsEpisodes();
+
 }

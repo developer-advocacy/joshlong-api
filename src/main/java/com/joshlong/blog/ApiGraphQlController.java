@@ -26,171 +26,171 @@ import java.util.stream.Collectors;
 @Controller
 class ApiGraphQlController {
 
-    private final int heroParagraphLength = 400;
+	private final int heroParagraphLength = 400;
 
-    private final IndexService indexService;
+	private final IndexService indexService;
 
-    private final AppearanceService appearanceService;
+	private final AppearanceService appearanceService;
 
-    private final PodcastService podcastService;
+	private final PodcastService podcastService;
 
-    private final DateFormat isoDateFormat;
-    private final SpringTipsService springTipsService;
-    private final ContentService booksContentService;
-    private final ContentService livelessonsContentService;
+	private final DateFormat isoDateFormat;
 
+	private final SpringTipsService springTipsService;
 
-    ApiGraphQlController(IndexService indexService,
-                         @Qualifier("booksContentService") ContentService booksContentService, SpringTipsService springTipsService,
-                         @Qualifier("livelessonsContentService") ContentService livelessonsContentService,
-                         AppearanceService appearanceService, PodcastService podcastService, DateFormat isoDateFormat) {
-        this.indexService = indexService;
-        this.appearanceService = appearanceService;
-        this.podcastService = podcastService;
-        this.isoDateFormat = isoDateFormat;
-        this.booksContentService = booksContentService;
-        this.livelessonsContentService = livelessonsContentService;
-        this.springTipsService = springTipsService;
-    }
+	private final ContentService booksContentService;
 
-    @QueryMapping
-    Collection<Appearance> appearances() {
-        return this.appearanceService.getAppearances();
-    }
+	private final ContentService livelessonsContentService;
 
-    @QueryMapping
-    Collection<BlogPost> recentBlogPosts(@Argument int count) {
-        var index = this.indexService.getIndex();
-        var blogs = index.values();
-        return blogs.stream()
-                .sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed())
-                .limit(count).collect(Collectors.toList());
-    }
+	ApiGraphQlController(IndexService indexService,
+			@Qualifier("booksContentService") ContentService booksContentService, SpringTipsService springTipsService,
+			@Qualifier("livelessonsContentService") ContentService livelessonsContentService,
+			AppearanceService appearanceService, PodcastService podcastService, DateFormat isoDateFormat) {
+		this.indexService = indexService;
+		this.appearanceService = appearanceService;
+		this.podcastService = podcastService;
+		this.isoDateFormat = isoDateFormat;
+		this.booksContentService = booksContentService;
+		this.livelessonsContentService = livelessonsContentService;
+		this.springTipsService = springTipsService;
+	}
 
-    @QueryMapping
-    Collection<Content> livelessons() {
-        return this.livelessonsContentService.getContent();
-    }
+	@QueryMapping
+	Collection<Appearance> appearances() {
+		return this.appearanceService.getAppearances();
+	}
 
-    @QueryMapping
-    Collection<Content> books() {
-        return this.booksContentService.getContent();
-    }
+	@QueryMapping
+	Collection<BlogPost> recentBlogPosts(@Argument int count) {
+		var index = this.indexService.getIndex();
+		var blogs = index.values();
+		return blogs.stream()
+				.sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed())
+				.limit(count).collect(Collectors.toList());
+	}
 
-    @QueryMapping
-    Collection<BlogPost> blogPosts() {
-        return this.indexService.getIndex().values();
-    }
+	@QueryMapping
+	Collection<Content> livelessons() {
+		return this.livelessonsContentService.getContent();
+	}
 
-    @QueryMapping
-    Mono<BlogPost> blogPostByPath(@Argument String path) {
-        var index = this.indexService.getIndex();
-        var nk = path.toLowerCase(Locale.ROOT);
+	@QueryMapping
+	Collection<Content> books() {
+		return this.booksContentService.getContent();
+	}
 
-        if (index.containsKey(nk))
-            return Mono.just(index.get(nk));
+	@QueryMapping
+	Collection<BlogPost> blogPosts() {
+		return this.indexService.getIndex().values();
+	}
 
-        nk = "/jl/blogpost/" + nk;
-        if (index.containsKey(nk))
-            return Mono.just(index.get(nk));
+	@QueryMapping
+	Mono<BlogPost> blogPostByPath(@Argument String path) {
+		var index = this.indexService.getIndex();
+		var nk = path.toLowerCase(Locale.ROOT);
 
-        return Mono.empty();
-    }
+		if (index.containsKey(nk))
+			return Mono.just(index.get(nk));
 
-    @QueryMapping
-    Collection<Podcast> podcasts() {
-        return this.podcastService.getPodcasts();
-    }
+		nk = "/jl/blogpost/" + nk;
+		if (index.containsKey(nk))
+			return Mono.just(index.get(nk));
 
-    @SchemaMapping(typeName = "Podcast", field = "date")
-    String date(Podcast p) {
-        if (null != p.date())
-            return this.isoDateFormat.format(p.date());
-        return null;
-    }
+		return Mono.empty();
+	}
 
-    @MutationMapping
-    IndexRebuildStatus rebuildIndex() {
-        return this.indexService.rebuildIndex();
-    }
+	@QueryMapping
+	Collection<Podcast> podcasts() {
+		return this.podcastService.getPodcasts();
+	}
 
-    @QueryMapping
-    Collection<BlogPost> search(@Argument String query) {
-        return this.indexService.search(query);
-    }
-    //
+	@SchemaMapping(typeName = "Podcast", field = "date")
+	String date(Podcast p) {
+		if (null != p.date())
+			return this.isoDateFormat.format(p.date());
+		return null;
+	}
 
-    @SchemaMapping(typeName = "Appearance", field = "startDate")
-    String startDate(Appearance bp) {
-        return isoDateFormat.format(bp.startDate());
-    }
+	@MutationMapping
+	IndexRebuildStatus rebuildIndex() {
+		return this.indexService.rebuildIndex();
+	}
 
-    @SchemaMapping(typeName = "Appearance", field = "endDate")
-    String endDate(Appearance bp) {
-        return isoDateFormat.format(bp.endDate());
-    }
-    //
+	@QueryMapping
+	Collection<BlogPost> search(@Argument String query) {
+		return this.indexService.search(query);
+	}
+	//
 
+	@SchemaMapping(typeName = "Appearance", field = "startDate")
+	String startDate(Appearance bp) {
+		return isoDateFormat.format(bp.startDate());
+	}
 
-    @SchemaMapping(typeName = "BlogPost", field = "date")
-    String date(BlogPost bp) {
-        return isoDateFormat.format(bp.date());
-    }
+	@SchemaMapping(typeName = "Appearance", field = "endDate")
+	String endDate(Appearance bp) {
+		return isoDateFormat.format(bp.endDate());
+	}
+	//
 
-    @SchemaMapping(typeName = "IndexRebuildStatus", field = "date")
-    String indexRebuildStatusDate(IndexRebuildStatus rebuildStatus) {
-        return isoDateFormat.format(rebuildStatus.date());
-    }
+	@SchemaMapping(typeName = "BlogPost", field = "date")
+	String date(BlogPost bp) {
+		return isoDateFormat.format(bp.date());
+	}
 
-    @SchemaMapping(typeName = "BlogPost")
-    String heroImage(BlogPost blogPost) {
-        return blogPost.images() != null && blogPost.images().size() > 0 ? blogPost.images().get(0) : null;
-    }
+	@SchemaMapping(typeName = "IndexRebuildStatus", field = "date")
+	String indexRebuildStatusDate(IndexRebuildStatus rebuildStatus) {
+		return isoDateFormat.format(rebuildStatus.date());
+	}
 
-    @SchemaMapping(typeName = "BlogPost")
-    String heroParagraphs(BlogPost post) {
-        Assert.state(post.paragraphs() != null, () -> "the paragraphs must be non-null");
-        var ctr = 0;
-        var hold = new ArrayList<String>();
-        for (var p : post.paragraphs()) {
-            if ((ctr + p.length()) <= (this.heroParagraphLength)) {
-                hold.add(p);
-            } //
-            else {
-                break;
-            }
-            ctr += p.length();
-        }
-        return (hold.size() == 0) ? post.paragraphs().get(0).substring(0, this.heroParagraphLength)
-                : String.join("", hold);
-    }
+	@SchemaMapping(typeName = "BlogPost")
+	String heroImage(BlogPost blogPost) {
+		return blogPost.images() != null && blogPost.images().size() > 0 ? blogPost.images().get(0) : null;
+	}
 
-    // new for the Spring Tips episodes
+	@SchemaMapping(typeName = "BlogPost")
+	String heroParagraphs(BlogPost post) {
+		Assert.state(post.paragraphs() != null, () -> "the paragraphs must be non-null");
+		var ctr = 0;
+		var hold = new ArrayList<String>();
+		for (var p : post.paragraphs()) {
+			if ((ctr + p.length()) <= (this.heroParagraphLength)) {
+				hold.add(p);
+			} //
+			else {
+				break;
+			}
+			ctr += p.length();
+		}
+		return (hold.size() == 0) ? post.paragraphs().get(0).substring(0, this.heroParagraphLength)
+				: String.join("", hold);
+	}
 
-    @QueryMapping
-    SpringTipsEpisode latestSpringTipsEpisode() {
-        return this.springTipsService.getLatestSpringTipsEpisode();
-    }
+	// new for the Spring Tips episodes
 
-    @QueryMapping
-    Collection<SpringTipsEpisode> springTipsEpisodes () {
-        return this.springTipsService.getSpringTipsEpisodes();
-    }
+	@QueryMapping
+	SpringTipsEpisode latestSpringTipsEpisode() {
+		return this.springTipsService.getLatestSpringTipsEpisode();
+	}
 
-    @SchemaMapping(typeName = "SpringTipsEpisode")
-    String date(SpringTipsEpisode springTipsEpisode) {
-        return this.isoDateFormat.format(springTipsEpisode.date());
-    }
+	@QueryMapping
+	Collection<SpringTipsEpisode> springTipsEpisodes() {
+		return this.springTipsService.getSpringTipsEpisodes();
+	}
 
-    @SchemaMapping(typeName = "SpringTipsEpisode")
-    String blogUrl(SpringTipsEpisode episode) {
-        return episode.blogUrl().toString();
-    }
+	@SchemaMapping(typeName = "SpringTipsEpisode")
+	String date(SpringTipsEpisode springTipsEpisode) {
+		return this.isoDateFormat.format(springTipsEpisode.date());
+	}
 
-    @SchemaMapping(typeName = "SpringTipsEpisode")
-    String youtubeEmbedUrl(SpringTipsEpisode springTipsEpisode) {
-        return springTipsEpisode.youtubeEmbedUrl().toString();
-    }
+	@SchemaMapping(typeName = "SpringTipsEpisode")
+	String blogUrl(SpringTipsEpisode episode) {
+		return episode.blogUrl().toString();
+	}
 
+	@SchemaMapping(typeName = "SpringTipsEpisode")
+	String youtubeEmbedUrl(SpringTipsEpisode springTipsEpisode) {
+		return springTipsEpisode.youtubeEmbedUrl().toString();
+	}
 
 }
