@@ -88,7 +88,6 @@ class DefaultBlogPostService implements BlogPostService {
 		for (var i : imgs) {
 			var ogSrc = i.attr("src");
 			var src = (ogSrc + "").trim();
-			log.info("the src is " + src);
 			if (src.startsWith(localImagePrefixToMatch)) {
 				var newSrc = resolveMediaServerUri + src;
 				newHtml = StringUtils.replace(newHtml, ogSrc, newSrc);

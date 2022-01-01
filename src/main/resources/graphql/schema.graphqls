@@ -7,6 +7,17 @@ type Query {
     podcasts : [Podcast]
     books: [Content]
     livelessons: [Content]
+    latestSpringTipsEpisode : SpringTipsEpisode
+    springTipsEpisodes : [SpringTipsEpisode]
+}
+
+type SpringTipsEpisode {
+    blogUrl : String
+    date : String
+    seasonNumber : Int
+    title : String
+    youtubeEmbedUrl : String
+    youtubeId : String
 }
 
 type Content {
@@ -62,3 +73,4 @@ type Appearance {
     time : String
     marketingBlurb: String
 }
+
