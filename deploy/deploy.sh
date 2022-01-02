@@ -2,7 +2,7 @@
 set -e
 set -o pipefail
 
-APP_NAME=joshlong-api
+APP_NAME=joshlong-com-api
 IMAGE_NAME=gcr.io/${PROJECT_ID}/${APP_NAME}
 docker rmi -f $IMAGE_NAME
 ./mvnw -DskipTests=true spring-javaformat:apply clean package spring-boot:build-image -Dspring-boot.build-image.imageName=$IMAGE_NAME
