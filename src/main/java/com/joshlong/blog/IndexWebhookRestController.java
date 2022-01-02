@@ -48,13 +48,9 @@ class IndexWebhookRestController {
 
 	@PostMapping("/index")
 	ResponseEntity<?> refresh(RequestEntity<?> requestEntity) {
-		// log.info("index:key: " + key);
-
-		HttpHeaders headers = requestEntity.getHeaders();
+		var headers = requestEntity.getHeaders();
 		headers.forEach((k, v) -> log.info(k + "=" + v));
-
 		var headerKey = "X-Hub-Signature-256";
-
 		if (headers.containsKey(headerKey)) {
 			List<String> strings = headers.get(headerKey);
 			if (Objects.requireNonNull(strings).size() > 0) {
@@ -65,11 +61,9 @@ class IndexWebhookRestController {
 				}
 				else {
 					log.info("the key " + deriveKey() + " is not within " + key);
-
 				}
 			}
 		}
-
 		return ResponseEntity.badRequest().build();
 	}
 
