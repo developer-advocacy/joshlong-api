@@ -15,7 +15,7 @@ spec:
         app: api
     spec:
       containers:
-        - image: gcr.io/bootiful/joshlong-api
+        - image: gcr.io/bootiful/joshlong-com-api
           imagePullPolicy: Always
           name: api
           readinessProbe:
