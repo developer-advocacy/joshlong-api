@@ -142,7 +142,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
+             <!--   <configuration>
                     <classifier>${repackage.classifier}</classifier>
                     <image>
                         <builder>paketobuildpacks/builder:tiny</builder>
@@ -150,7 +150,11 @@
                             <BP_NATIVE_IMAGE>true</BP_NATIVE_IMAGE>
                         </env>
                     </image>
-                </configuration>
+                </configuration>-->
+
+                <!--
+                TODO restore the configuration for Spring Native && GraalVM
+                -->
             </plugin>
 
 
