@@ -6,10 +6,14 @@ import com.joshlong.blog.dates.SimpleDateDateFormat;
 import com.joshlong.blog.index.IndexingFinishedEvent;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.scheduler.Schedulers;
 
 import java.net.URI;
 import java.text.DateFormat;
@@ -29,33 +33,30 @@ class DefaultSpringTipsService implements SpringTipsService {
 
 	private final URI episodes = URI.create("https://springtipslive.io/episodes.json");
 
+	private final ParameterizedTypeReference<List<Map<String, String>>> responseType = new ParameterizedTypeReference<>() {
+	};
+
 	private final List<SpringTipsEpisode> episodeList = new ArrayList<>();
 
-	private final WebClient client;
+	private final RestTemplate restTemplate = new RestTemplateBuilder().build();
 
 	private final DateFormat dateFormat;
 
 	private final Object monitor = new Object();
 
-	DefaultSpringTipsService(@SimpleDateDateFormat DateFormat dateFormat, WebClient client) {
-		this.client = client;
+	DefaultSpringTipsService(@SimpleDateDateFormat DateFormat dateFormat) {
 		this.dateFormat = dateFormat;
 	}
 
 	@EventListener(IndexingFinishedEvent.class)
 	public void indexFinished() {
-		reset();
-	}
-
-	private void reset() {
 		log.info("reset(). Going to refresh the Spring Tips episodes from " + this.episodes);
-		var list = this.client.get().uri(this.episodes).retrieve()
-				.bodyToFlux(new ParameterizedTypeReference<Map<String, String>>() {
-				}).collectList().block();
 
+		var list = this.restTemplate.exchange(this.episodes, HttpMethod.GET, null, responseType);
 		synchronized (this.monitor) {
 			this.episodeList.clear();
-			this.episodeList.addAll(Objects.requireNonNull(list).stream().map(this::from).toList());
+			this.episodeList.addAll(
+					Objects.requireNonNull(Objects.requireNonNull(list).getBody()).stream().map(this::from).toList());
 			log.info("there are " + this.episodeList.size() + " episodes. ");
 		}
 	}
