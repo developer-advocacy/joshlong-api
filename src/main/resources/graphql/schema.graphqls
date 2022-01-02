@@ -41,9 +41,6 @@ type Podcast {
     description: String
 }
 
-type Mutation {
-    rebuildIndex: IndexRebuildStatus
-}
 
 type BlogPost {
     title: String

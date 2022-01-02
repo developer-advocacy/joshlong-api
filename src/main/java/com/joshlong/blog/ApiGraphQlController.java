@@ -109,10 +109,12 @@ class ApiGraphQlController {
 		return null;
 	}
 
+/*
 	@MutationMapping
 	IndexRebuildStatus rebuildIndex() {
 		return this.indexService.rebuildIndex();
 	}
+*/
 
 	@QueryMapping
 	Collection<BlogPost> search(@Argument String query) {
