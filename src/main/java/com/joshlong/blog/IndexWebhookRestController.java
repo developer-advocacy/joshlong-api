@@ -18,19 +18,21 @@ import java.util.Map;
 @Slf4j
 @Controller
 @ResponseBody
-class IndexWebhookController {
+class IndexWebhookRestController {
 
     private final IndexService indexService;
 
     private final BlogProperties properties;
 
-    IndexWebhookController(IndexService indexService, BlogProperties properties) {
+    IndexWebhookRestController(IndexService indexService, BlogProperties properties) {
         this.indexService = indexService;
         this.properties = properties;
     }
 
     @PostMapping("/index")
-    ResponseEntity<?> refresh(@RequestBody Map<String, String> payload) {
+    ResponseEntity<?> refresh(
+
+            @RequestBody Map<String, String> payload) {
         payload.forEach((k, v) -> log.info(k + "=" + v));
         var content = payload.getOrDefault("key", "");
         var good = (StringUtils.hasText(content) && this.properties.indexRebuildKey().equalsIgnoreCase(content));
