@@ -18,6 +18,9 @@ spec:
         - image: gcr.io/bootiful/joshlong-com-api
           imagePullPolicy: Always
           name: api
+          env:
+            - name: LANG
+              value: "en_US.UTF-8"
           readinessProbe:
             httpGet:
               port: 8080
