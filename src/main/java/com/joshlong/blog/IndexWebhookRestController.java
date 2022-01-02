@@ -51,7 +51,12 @@ class IndexWebhookRestController {
 	}
 
 	@PostMapping("/index")
-	ResponseEntity<?> refresh(@RequestHeader("X-Hub-Signature-256") String key) {
+	ResponseEntity<?> refresh(@RequestBody RequestEntity<?> requestEntity,
+			@RequestHeader("-Hub-Signature-256") String key) {
+		log.info("index:key: " + key);
+
+		requestEntity.getHeaders().forEach((k, v) -> log.info(k + "=" + v));
+
 		if (StringUtils.hasText(key)) {
 			if (key.contains(this.computedKey)) {
 				return ResponseEntity.ok(this.indexService.rebuildIndex());
