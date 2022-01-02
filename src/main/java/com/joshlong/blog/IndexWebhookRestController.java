@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * TODO Could this be made into an Actuator endpoint and could that Actuator endpoint
@@ -56,7 +57,7 @@ class IndexWebhookRestController {
 
 		if (headers.containsKey(headerKey)) {
 			List<String> strings = headers.get(headerKey);
-			if (strings.size() > 0) {
+			if (Objects.requireNonNull(strings).size() > 0) {
 				var key = strings.get(0);
 				if (key.contains(this.deriveKey())) {
 					log.info("rebuilding index successfully");
@@ -69,12 +70,6 @@ class IndexWebhookRestController {
 			}
 		}
 
-		var listStream = headers.keySet().stream().filter(ks -> ks.equalsIgnoreCase()).map(ks -> headers.get(ks).get(0))
-				.toList();
-		/*
-		 * if (StringUtils.hasText(key)) { if (key.contains(this.computedKey)) { return
-		 * ResponseEntity.ok(this.indexService.rebuildIndex()); } }
-		 */
 		return ResponseEntity.badRequest().build();
 	}
 
