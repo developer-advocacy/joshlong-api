@@ -37,22 +37,17 @@ class IndexWebhookRestController {
 	private final String computedKey;
 
 	IndexWebhookRestController(IndexService indexService, BlogProperties properties) throws Exception {
-
 		this.indexService = indexService;
 		this.properties = properties;
 		this.computedKey = this.deriveKey();
-
 	}
 
 	@SneakyThrows
 	private String deriveKey() {
 		var key = this.properties.indexRebuildKey();
-
 		var digest = MessageDigest.getInstance("SHA-256");
 		var hash = digest.digest(key.getBytes(StandardCharsets.UTF_8));
-		var sha256hex = (Hex.toHexString(hash));
-		log.info("the sha256 is " + sha256hex);
-		return sha256hex;
+		return Hex.toHexString(hash);
 	}
 
 	@PostMapping("/index")
