@@ -18,6 +18,8 @@ import java.security.MessageDigest;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * TODO Could this be made into an Actuator endpoint and could that Actuator endpoint
@@ -51,10 +53,13 @@ class IndexWebhookRestController {
 	}
 
 	@PostMapping("/index")
-	ResponseEntity<?> refresh(@RequestBody RequestEntity<?> requestEntity) {
+	ResponseEntity<?> refresh(RequestEntity<?> requestEntity) {
 		// log.info("index:key: " + key);
 
 		requestEntity.getHeaders().forEach((k, v) -> log.info(k + "=" + v));
+		var listStream = requestEntity.getHeaders().keySet().stream()
+				.filter(ks -> ks.equalsIgnoreCase("X-Hub-Signature-256"))
+				.map(ks -> requestEntity.getHeaders().get(ks).get(0)).collect(Collectors.toList());
 		/*
 		 * if (StringUtils.hasText(key)) { if (key.contains(this.computedKey)) { return
 		 * ResponseEntity.ok(this.indexService.rebuildIndex()); } }
