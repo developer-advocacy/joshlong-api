@@ -9,7 +9,7 @@ import java.net.URI;
 @ConstructorBinding
 @ConfigurationProperties("blog")
 public record BlogProperties(URI gitRepository, Resource localCloneDirectory, boolean resetOnRebuild,
-
+		String apiServerUri,
 		/*
 		 * this key is stored in my lastpass. it's an environment variable for this app
 		 * and configured as the payload of the webhook in github for the

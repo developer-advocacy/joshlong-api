@@ -1,6 +1,7 @@
 package com.joshlong.blog.blogs;
 
 import com.joshlong.blog.BlogPostService;
+import com.joshlong.blog.BlogProperties;
 import com.joshlong.blog.dates.SimpleDateDateFormat;
 import com.joshlong.templates.MarkdownService;
 import org.springframework.context.annotation.Bean;
@@ -12,8 +13,9 @@ import java.text.DateFormat;
 class BlogPostConfiguration {
 
 	@Bean
-	BlogPostService blogService(MarkdownService markdownService, @SimpleDateDateFormat DateFormat simpleDateFormat) {
-		return new DefaultBlogPostService(markdownService, simpleDateFormat);
+	BlogPostService blogService(MarkdownService markdownService, @SimpleDateDateFormat DateFormat simpleDateFormat,
+			BlogProperties properties) {
+		return new DefaultBlogPostService(markdownService, simpleDateFormat, properties.apiServerUri());
 	}
 
 }

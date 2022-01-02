@@ -23,9 +23,12 @@ class DefaultBlogPostService implements BlogPostService {
 
 	private final DateFormat simpleDateFormat;
 
-	DefaultBlogPostService(MarkdownService markdownService, DateFormat simpleDateFormat) {
+	private final String apiRoot;
+
+	DefaultBlogPostService(MarkdownService markdownService, DateFormat simpleDateFormat, String apiRoot) {
 		this.markdownService = markdownService;
 		this.simpleDateFormat = simpleDateFormat;
+		this.apiRoot = apiRoot;
 	}
 
 	@SneakyThrows
@@ -117,7 +120,7 @@ class DefaultBlogPostService implements BlogPostService {
 		Assert.notNull(dateFromHeaderString, () -> "the blog must have a published date!");
 		var date = buildHeaderDate(dateFromHeaderString);
 		var processedContent = this.markdownService.convertMarkdownTemplateToHtml(parts[1]);
-		processedContent = resolveImageSources("http://localhost:8080/", "/media/", processedContent);
+		processedContent = resolveImageSources(this.apiRoot, "/media/", processedContent);
 		var published = header.get("status").toLowerCase(Locale.ROOT).equalsIgnoreCase("published");
 		var images = discoverImages(processedContent);
 		var firstParagraph = discoverPreviewParagraphs(processedContent, 2);
