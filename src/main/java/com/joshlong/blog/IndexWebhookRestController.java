@@ -51,17 +51,14 @@ class IndexWebhookRestController {
 	}
 
 	@PostMapping("/index")
-	ResponseEntity<?> refresh(@RequestBody RequestEntity<?> requestEntity,
-			@RequestHeader("-Hub-Signature-256") String key) {
-		log.info("index:key: " + key);
+	ResponseEntity<?> refresh(@RequestBody RequestEntity<?> requestEntity) {
+		// log.info("index:key: " + key);
 
 		requestEntity.getHeaders().forEach((k, v) -> log.info(k + "=" + v));
-
-		if (StringUtils.hasText(key)) {
-			if (key.contains(this.computedKey)) {
-				return ResponseEntity.ok(this.indexService.rebuildIndex());
-			}
-		}
+		/*
+		 * if (StringUtils.hasText(key)) { if (key.contains(this.computedKey)) { return
+		 * ResponseEntity.ok(this.indexService.rebuildIndex()); } }
+		 */
 		return ResponseEntity.badRequest().build();
 	}
 
