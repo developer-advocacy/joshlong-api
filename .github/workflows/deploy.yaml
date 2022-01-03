@@ -1,10 +1,12 @@
 name: Deploy
 
 env:
-  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
   GKE_CLUSTER: joshlong-com
   GKE_ZONE: us-central1-c
+  BLOG_INDEX_REBUILD_KEY: ${{  secrets.BLOG_INDEX_REBUILD_KEY }}
   GCP_CREDENTIALS: ${{ secrets.GCP_CREDENTIALS }}
+  PROJECT_ID: ${{ secrets.GKE_PROJECT }}
+
 on:
   push:
     branches: [ main ]
