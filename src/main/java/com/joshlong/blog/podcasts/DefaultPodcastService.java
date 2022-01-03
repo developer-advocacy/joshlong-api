@@ -64,7 +64,9 @@ class DefaultPodcastService implements PodcastService {
 				var episodeUri = JsonUtils.valueOrNull(node, "episodeUri", u -> buildUrlFrom(root + u));
 				var description = JsonUtils.valueOrNull(node, "description");
 				return new Podcast(id, uid, title, date, episodePhotoUri, episodeUri, description);
-			}).sorted(Comparator.comparing(Podcast::date).reversed()).collect(Collectors.toList()));
+			})//
+					.sorted(Comparator.comparing(Podcast::date).reversed())//
+					.toList());
 		}
 	}
 
