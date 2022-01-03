@@ -28,149 +28,146 @@ import java.util.stream.Collectors;
 @Controller
 class ApiGraphQlController {
 
-    private final List<BlogPost> postsOrderedNewestToOldest = new CopyOnWriteArrayList<>();
+	private final List<BlogPost> postsOrderedNewestToOldest = new CopyOnWriteArrayList<>();
 
-    private final IndexService indexService;
+	private final IndexService indexService;
 
-    private final AppearanceService appearanceService;
+	private final AppearanceService appearanceService;
 
-    private final PodcastService podcastService;
+	private final PodcastService podcastService;
 
-    private final DateFormat isoDateFormat;
+	private final DateFormat isoDateFormat;
 
-    private final SpringTipsService springTipsService;
+	private final SpringTipsService springTipsService;
 
-    private final ContentService booksContentService;
+	private final ContentService booksContentService;
 
-    private final ContentService livelessonsContentService;
+	private final ContentService livelessonsContentService;
 
+	ApiGraphQlController(IndexService indexService,
+			@Qualifier("booksContentService") ContentService booksContentService, SpringTipsService springTipsService,
+			@Qualifier("livelessonsContentService") ContentService livelessonsContentService,
+			AppearanceService appearanceService, PodcastService podcastService, DateFormat isoDateFormat) {
+		this.indexService = indexService;
+		this.appearanceService = appearanceService;
+		this.podcastService = podcastService;
+		this.isoDateFormat = isoDateFormat;
+		this.booksContentService = booksContentService;
+		this.livelessonsContentService = livelessonsContentService;
+		this.springTipsService = springTipsService;
+	}
 
-    ApiGraphQlController(IndexService indexService,
-                         @Qualifier("booksContentService") ContentService booksContentService, SpringTipsService springTipsService,
-                         @Qualifier("livelessonsContentService") ContentService livelessonsContentService,
-                         AppearanceService appearanceService, PodcastService podcastService, DateFormat isoDateFormat) {
-        this.indexService = indexService;
-        this.appearanceService = appearanceService;
-        this.podcastService = podcastService;
-        this.isoDateFormat = isoDateFormat;
-        this.booksContentService = booksContentService;
-        this.livelessonsContentService = livelessonsContentService;
-        this.springTipsService = springTipsService;
-    }
+	@EventListener(IndexingFinishedEvent.class)
+	public void refresh() {
+		log.info("caching the blogPost collection newest to oldest.");
+		var index = this.indexService.getIndex();
+		var blogs = index.values();
+		var results = blogs.stream() //
+				.sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed()) //
+				.toList();
+		this.postsOrderedNewestToOldest.addAll(results);
+	}
 
-    @EventListener(IndexingFinishedEvent.class)
-    public void refresh() {
-        log.info("caching the blogPost collection newest to oldest.");
-        var index = this.indexService.getIndex();
-        var blogs = index.values();
-        var results = blogs
-                .stream() //
-                .sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed()) //
-                .toList();
-        this.postsOrderedNewestToOldest.addAll(results);
-    }
+	@QueryMapping
+	Collection<Appearance> appearances() {
+		return this.appearanceService.getAppearances();
+	}
 
-    @QueryMapping
-    Collection<Appearance> appearances() {
-        return this.appearanceService.getAppearances();
-    }
+	@QueryMapping
+	Collection<BlogPost> recentBlogPosts(@Argument int count) {
+		return postsOrderedNewestToOldest.stream().limit(count).toList();
+	}
 
-    @QueryMapping
-    Collection<BlogPost> recentBlogPosts(@Argument int count) {
-        return postsOrderedNewestToOldest.stream().limit(count).toList();
-    }
+	@QueryMapping
+	BlogPostSearchResults search(@Argument String query, @Argument int offset, @Argument int pageSize) {
+		return this.indexService.search(query, offset, pageSize);
+	}
 
-    @QueryMapping
-    BlogPostSearchResults search(@Argument String query, @Argument int offset, @Argument int pageSize) {
-        return this.indexService.search(query, offset, pageSize);
-    }
+	@QueryMapping
+	Mono<BlogPost> blogPostByPath(@Argument String path) {
+		var index = this.indexService.getIndex();
+		var nk = path.toLowerCase(Locale.ROOT);
 
-    @QueryMapping
-    Mono<BlogPost> blogPostByPath(@Argument String path) {
-        var index = this.indexService.getIndex();
-        var nk = path.toLowerCase(Locale.ROOT);
+		if (index.containsKey(nk))
+			return Mono.just(index.get(nk));
 
-        if (index.containsKey(nk))
-            return Mono.just(index.get(nk));
+		nk = "/jl/blogpost/" + nk;
+		if (index.containsKey(nk))
+			return Mono.just(index.get(nk));
 
-        nk = "/jl/blogpost/" + nk;
-        if (index.containsKey(nk))
-            return Mono.just(index.get(nk));
+		return Mono.empty();
+	}
 
-        return Mono.empty();
-    }
+	@QueryMapping
+	Collection<Content> livelessons() {
+		return this.livelessonsContentService.getContent();
+	}
 
+	@QueryMapping
+	Collection<Content> books() {
+		return this.booksContentService.getContent();
+	}
 
-    @QueryMapping
-    Collection<Content> livelessons() {
-        return this.livelessonsContentService.getContent();
-    }
+	@QueryMapping
+	Collection<Podcast> podcasts() {
+		return this.podcastService.getPodcasts();
+	}
 
-    @QueryMapping
-    Collection<Content> books() {
-        return this.booksContentService.getContent();
-    }
+	@SchemaMapping(typeName = "Podcast", field = "date")
+	String date(Podcast p) {
+		return null != p.date() ? this.isoDateFormat.format(p.date()) : null;
+	}
 
-    @QueryMapping
-    Collection<Podcast> podcasts() {
-        return this.podcastService.getPodcasts();
-    }
+	@SchemaMapping(typeName = "Appearance", field = "startDate")
+	String startDate(Appearance bp) {
+		return isoDateFormat.format(bp.startDate());
+	}
 
-    @SchemaMapping(typeName = "Podcast", field = "date")
-    String date(Podcast p) {
-        return null != p.date() ? this.isoDateFormat.format(p.date()) : null;
-    }
+	@SchemaMapping(typeName = "Appearance", field = "endDate")
+	String endDate(Appearance bp) {
+		return isoDateFormat.format(bp.endDate());
+	}
 
+	@SchemaMapping(typeName = "BlogPost", field = "date")
+	String date(BlogPost bp) {
+		return isoDateFormat.format(bp.date());
+	}
 
-    @SchemaMapping(typeName = "Appearance", field = "startDate")
-    String startDate(Appearance bp) {
-        return isoDateFormat.format(bp.startDate());
-    }
+	@SchemaMapping(typeName = "BlogPost")
+	String heroImage(BlogPost blogPost) {
+		return blogPost.images() != null && blogPost.images().size() > 0 ? blogPost.images().get(0) : null;
+	}
 
-    @SchemaMapping(typeName = "Appearance", field = "endDate")
-    String endDate(Appearance bp) {
-        return isoDateFormat.format(bp.endDate());
-    }
+	@SchemaMapping(typeName = "BlogPost")
+	String heroParagraphs(BlogPost post) {
+		Assert.state(post.paragraphs() != null && post.paragraphs().size() > 0,
+				() -> "the paragraphs must be non-null");
+		return String.join(" ", post.paragraphs());
+	}
 
-    @SchemaMapping(typeName = "BlogPost", field = "date")
-    String date(BlogPost bp) {
-        return isoDateFormat.format(bp.date());
-    }
+	@QueryMapping
+	SpringTipsEpisode latestSpringTipsEpisode() {
+		return this.springTipsService.getLatestSpringTipsEpisode();
+	}
 
-    @SchemaMapping(typeName = "BlogPost")
-    String heroImage(BlogPost blogPost) {
-        return blogPost.images() != null && blogPost.images().size() > 0 ? blogPost.images().get(0) : null;
-    }
+	@QueryMapping
+	Collection<SpringTipsEpisode> springTipsEpisodes() {
+		return this.springTipsService.getSpringTipsEpisodes();
+	}
 
-    @SchemaMapping(typeName = "BlogPost")
-    String heroParagraphs(BlogPost post) {
-        Assert.state(post.paragraphs() != null && post.paragraphs().size() > 0, () -> "the paragraphs must be non-null");
-        return String.join(" ", post.paragraphs());
-    }
+	@SchemaMapping(typeName = "SpringTipsEpisode")
+	String date(SpringTipsEpisode springTipsEpisode) {
+		return this.isoDateFormat.format(springTipsEpisode.date());
+	}
 
-    @QueryMapping
-    SpringTipsEpisode latestSpringTipsEpisode() {
-        return this.springTipsService.getLatestSpringTipsEpisode();
-    }
+	@SchemaMapping(typeName = "SpringTipsEpisode")
+	String blogUrl(SpringTipsEpisode episode) {
+		return episode.blogUrl().toString();
+	}
 
-    @QueryMapping
-    Collection<SpringTipsEpisode> springTipsEpisodes() {
-        return this.springTipsService.getSpringTipsEpisodes();
-    }
-
-    @SchemaMapping(typeName = "SpringTipsEpisode")
-    String date(SpringTipsEpisode springTipsEpisode) {
-        return this.isoDateFormat.format(springTipsEpisode.date());
-    }
-
-    @SchemaMapping(typeName = "SpringTipsEpisode")
-    String blogUrl(SpringTipsEpisode episode) {
-        return episode.blogUrl().toString();
-    }
-
-    @SchemaMapping(typeName = "SpringTipsEpisode")
-    String youtubeEmbedUrl(SpringTipsEpisode springTipsEpisode) {
-        return springTipsEpisode.youtubeEmbedUrl().toString();
-    }
+	@SchemaMapping(typeName = "SpringTipsEpisode")
+	String youtubeEmbedUrl(SpringTipsEpisode springTipsEpisode) {
+		return springTipsEpisode.youtubeEmbedUrl().toString();
+	}
 
 }

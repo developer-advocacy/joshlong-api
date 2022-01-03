@@ -34,194 +34,194 @@ import java.util.stream.Collectors;
 
 class DefaultIndexService implements IndexService, ApplicationListener<ApplicationEvent> {
 
-    private final static Log log = LogFactory.getLog(DefaultIndexService.class);
+	private final static Log log = LogFactory.getLog(DefaultIndexService.class);
 
-    private final DateFormat simpleDateFormat;
+	private final DateFormat simpleDateFormat;
 
-    private final File root;
+	private final File root;
 
-    private final Map<String, BlogPost> index = new ConcurrentHashMap<>();
+	private final Map<String, BlogPost> index = new ConcurrentHashMap<>();
 
-    private final ApplicationEventPublisher publisher;
+	private final ApplicationEventPublisher publisher;
 
-    private final BlogPostService blogPostService;
+	private final BlogPostService blogPostService;
 
-    private final Object monitor = new Object();
+	private final Object monitor = new Object();
 
-    private final LuceneTemplate luceneTemplate;
+	private final LuceneTemplate luceneTemplate;
 
-    private final URI gitRepository;
+	private final URI gitRepository;
 
-    private final boolean resetOnRebuild;
+	private final boolean resetOnRebuild;
 
-    private final Set<String> extensions = Arrays.stream(BlogPostContentType.values())//
-            .map(contentType -> contentType.name().toLowerCase(Locale.ROOT))//
-            .collect(Collectors.toSet());
+	private final Set<String> extensions = Arrays.stream(BlogPostContentType.values())//
+			.map(contentType -> contentType.name().toLowerCase(Locale.ROOT))//
+			.collect(Collectors.toSet());
 
-    @SneakyThrows
-    DefaultIndexService(DateFormat simpleDateFormat, ApplicationEventPublisher publisher,
-                        BlogPostService blogPostService, LuceneTemplate luceneTemplate, URI gitRepository, File contentRoot,
-                        boolean resetOnRebuild) {
-        this.simpleDateFormat = simpleDateFormat;
-        this.blogPostService = blogPostService;
-        this.resetOnRebuild = resetOnRebuild;
-        this.luceneTemplate = luceneTemplate;
-        this.root = contentRoot;
-        this.publisher = publisher;
-        this.gitRepository = gitRepository;
-    }
+	@SneakyThrows
+	DefaultIndexService(DateFormat simpleDateFormat, ApplicationEventPublisher publisher,
+			BlogPostService blogPostService, LuceneTemplate luceneTemplate, URI gitRepository, File contentRoot,
+			boolean resetOnRebuild) {
+		this.simpleDateFormat = simpleDateFormat;
+		this.blogPostService = blogPostService;
+		this.resetOnRebuild = resetOnRebuild;
+		this.luceneTemplate = luceneTemplate;
+		this.root = contentRoot;
+		this.publisher = publisher;
+		this.gitRepository = gitRepository;
+	}
 
-    @SneakyThrows
-    private void ensureClonedRepository() {
-        log.info("should reset Git clone? " + this.resetOnRebuild);
-        if (!this.resetOnRebuild)
-            return;
+	@SneakyThrows
+	private void ensureClonedRepository() {
+		log.info("should reset Git clone? " + this.resetOnRebuild);
+		if (!this.resetOnRebuild)
+			return;
 
-        if (this.root.exists() && this.root.isDirectory()) {
-            log.info("deleting " + this.root.getAbsolutePath() + '.');
-            FileSystemUtils.deleteRecursively(this.root);
-        }
+		if (this.root.exists() && this.root.isDirectory()) {
+			log.info("deleting " + this.root.getAbsolutePath() + '.');
+			FileSystemUtils.deleteRecursively(this.root);
+		}
 
-        var repo = Git.cloneRepository().setDirectory(this.root).setURI(this.gitRepository.toString()).call()
-                .getRepository();
+		var repo = Git.cloneRepository().setDirectory(this.root).setURI(this.gitRepository.toString()).call()
+				.getRepository();
 
-        try (var git = new Git(repo)) {
-            var status = git.status().call();
-            log.info("the status is " + status.toString());
-        }
-    }
+		try (var git = new Git(repo)) {
+			var status = git.status().call();
+			log.info("the status is " + status.toString());
+		}
+	}
 
-    @SneakyThrows
-    @Override
-    public IndexRebuildStatus rebuildIndex() {
-        log.info("refreshing " + IndexService.class.getName());
-        Assert.notNull(this.root, () -> "you must specify a valid root ");
-        this.publisher.publishEvent(new IndexingStartedEvent(new Date()));
-        this.ensureClonedRepository();
-        Assert.state(this.root.exists() && Objects.requireNonNull(this.root.list()).length > 0,
-                () -> "there's no cloned repository under the root " + this.root.getAbsolutePath() + '.');
-        synchronized (this.monitor) {
-            this.index.clear();
-            this.index.putAll(this.buildIndex());
-        }
-        var now = new Date();
-        Assert.state(this.index.size() > 0, () -> "there are no entries in the content index. "
-                + "Something's wrong! Ensure you have content registered.");
-        this.publisher.publishEvent(new IndexingFinishedEvent(now));
-        return new IndexRebuildStatus(this.index.size(), now);
+	@SneakyThrows
+	@Override
+	public IndexRebuildStatus rebuildIndex() {
+		log.info("refreshing " + IndexService.class.getName());
+		Assert.notNull(this.root, () -> "you must specify a valid root ");
+		this.publisher.publishEvent(new IndexingStartedEvent(new Date()));
+		this.ensureClonedRepository();
+		Assert.state(this.root.exists() && Objects.requireNonNull(this.root.list()).length > 0,
+				() -> "there's no cloned repository under the root " + this.root.getAbsolutePath() + '.');
+		synchronized (this.monitor) {
+			this.index.clear();
+			this.index.putAll(this.buildIndex());
+		}
+		var now = new Date();
+		Assert.state(this.index.size() > 0, () -> "there are no entries in the content index. "
+				+ "Something's wrong! Ensure you have content registered.");
+		this.publisher.publishEvent(new IndexingFinishedEvent(now));
+		return new IndexRebuildStatus(this.index.size(), now);
 
-    }
+	}
 
-    @Override
-    public Map<String, BlogPost> getIndex() {
-        return this.index;
-    }
+	@Override
+	public Map<String, BlogPost> getIndex() {
+		return this.index;
+	}
 
-    @Override
-    @SneakyThrows
-    public BlogPostSearchResults search(String query, int offset, int pageSize) {
+	@Override
+	@SneakyThrows
+	public BlogPostSearchResults search(String query, int offset, int pageSize) {
 
-        var results = this.searchIndex(query, this.index.size()) //
-                .stream() //
-                .map(this.index::get) //
-                .sorted(Comparator.comparing(BlogPost::date).reversed()) //
-                .toList();
+		var results = this.searchIndex(query, this.index.size()) //
+				.stream() //
+				.map(this.index::get) //
+				.sorted(Comparator.comparing(BlogPost::date).reversed()) //
+				.toList();
 
-        var returningList = (List<BlogPost>) null;
+		var returningList = (List<BlogPost>) null;
 
-        if (results.size() < pageSize)
-            returningList = results;
+		if (results.size() < pageSize)
+			returningList = results;
 
-        else if (offset > results.size() || (offset + pageSize) > results.size())
-            returningList = Collections.emptyList();
+		else if (offset > results.size() || (offset + pageSize) > results.size())
+			returningList = Collections.emptyList();
 
-        else
-            returningList = results.subList(offset, offset + pageSize);
+		else
+			returningList = results.subList(offset, offset + pageSize);
 
-        return new BlogPostSearchResults(results.size(), offset, pageSize, returningList);
+		return new BlogPostSearchResults(results.size(), offset, pageSize, returningList);
 
-    }
+	}
 
-    private List<String> searchIndex(String queryStr, int maxResults) {
-        return this.luceneTemplate.search(queryStr, maxResults, document -> document.get("path"));
-    }
+	private List<String> searchIndex(String queryStr, int maxResults) {
+		return this.luceneTemplate.search(queryStr, maxResults, document -> document.get("path"));
+	}
 
-    private String computePath(File file, File contentDirectory) {
-        var ext = ".md";
-        var sub = file.getAbsolutePath().substring(contentDirectory.getAbsolutePath().length());
-        if (sub.endsWith(ext))
-            sub = sub.substring(0, sub.length() - ext.length()) + ".html";
-        return sub.toLowerCase(Locale.ROOT);
-    }
+	private String computePath(File file, File contentDirectory) {
+		var ext = ".md";
+		var sub = file.getAbsolutePath().substring(contentDirectory.getAbsolutePath().length());
+		if (sub.endsWith(ext))
+			sub = sub.substring(0, sub.length() - ext.length()) + ".html";
+		return sub.toLowerCase(Locale.ROOT);
+	}
 
-    @SneakyThrows
-    private Map<String, BlogPost> buildIndex() {
-        log.debug("building index @ " + Instant.now() + '.');
-        var contentDirectory = new File(this.root, "content");
-        var mapOfContent = Files.walk(contentDirectory.toPath()) //
-                .parallel() //
-                .map(Path::toFile) //
-                .filter(this::isValidFile) //
-                .map(file -> {
-                    var blogPost = this.blogPostService.buildBlogPostFrom(computePath(file, contentDirectory), file);
-                    return new DefaultIndexService.BlogPostKey(blogPost.path(), blogPost);
-                }).collect(Collectors.toMap(DefaultIndexService.BlogPostKey::path,
-                        DefaultIndexService.BlogPostKey::blogPost));
-        this.luceneTemplate.write(mapOfContent.entrySet(), entry -> {
-            var path = entry.getKey();
-            var blogPost = entry.getValue();
-            var doc = buildBlogPost(path, blogPost);
-            return new DocumentWriteMapper.DocumentWrite(new Term("key", buildHashKeyFor(blogPost)), doc);
-        });
-        return mapOfContent;
-    }
+	@SneakyThrows
+	private Map<String, BlogPost> buildIndex() {
+		log.debug("building index @ " + Instant.now() + '.');
+		var contentDirectory = new File(this.root, "content");
+		var mapOfContent = Files.walk(contentDirectory.toPath()) //
+				.parallel() //
+				.map(Path::toFile) //
+				.filter(this::isValidFile) //
+				.map(file -> {
+					var blogPost = this.blogPostService.buildBlogPostFrom(computePath(file, contentDirectory), file);
+					return new DefaultIndexService.BlogPostKey(blogPost.path(), blogPost);
+				}).collect(Collectors.toMap(DefaultIndexService.BlogPostKey::path,
+						DefaultIndexService.BlogPostKey::blogPost));
+		this.luceneTemplate.write(mapOfContent.entrySet(), entry -> {
+			var path = entry.getKey();
+			var blogPost = entry.getValue();
+			var doc = buildBlogPost(path, blogPost);
+			return new DocumentWriteMapper.DocumentWrite(new Term("key", buildHashKeyFor(blogPost)), doc);
+		});
+		return mapOfContent;
+	}
 
-    private String buildHashKeyFor(BlogPost blogPost) {
-        Assert.notNull(blogPost, () -> "the blog must not be null");
-        Assert.notNull(blogPost.date(), () -> "the blog date must not be null");
-        Assert.notNull(blogPost.title(), () -> "the blog title must not be null");
-        var title = blogPost.title();
-        var stringBuilder = new StringBuilder();
-        for (var c : title.toCharArray()) {
-            if (Character.isAlphabetic(c)) {
-                stringBuilder.append(c);
-            }
-        }
-        return stringBuilder + this.simpleDateFormat.format(blogPost.date());
-    }
+	private String buildHashKeyFor(BlogPost blogPost) {
+		Assert.notNull(blogPost, () -> "the blog must not be null");
+		Assert.notNull(blogPost.date(), () -> "the blog date must not be null");
+		Assert.notNull(blogPost.title(), () -> "the blog title must not be null");
+		var title = blogPost.title();
+		var stringBuilder = new StringBuilder();
+		for (var c : title.toCharArray()) {
+			if (Character.isAlphabetic(c)) {
+				stringBuilder.append(c);
+			}
+		}
+		return stringBuilder + this.simpleDateFormat.format(blogPost.date());
+	}
 
-    private String htmlToText(String htmlMarkup) {
-        return Jsoup.parse(htmlMarkup).text();
-    }
+	private String htmlToText(String htmlMarkup) {
+		return Jsoup.parse(htmlMarkup).text();
+	}
 
-    @SneakyThrows
-    private Document buildBlogPost(String relativePath, BlogPost post) {
-        var document = new Document();
-        document.add(new TextField("title", post.title(), Field.Store.YES));
-        document.add(new TextField("path", relativePath, Field.Store.YES));
-        document.add(new TextField("originalContent", post.originalContent(), Field.Store.YES));
-        document.add(new TextField("content", htmlToText(post.processedContent()), Field.Store.YES));
-        document.add(new LongPoint("time", post.date().getTime()));
-        document.add(new StringField("key", buildHashKeyFor(post), Field.Store.YES));
-        return document;
-    }
+	@SneakyThrows
+	private Document buildBlogPost(String relativePath, BlogPost post) {
+		var document = new Document();
+		document.add(new TextField("title", post.title(), Field.Store.YES));
+		document.add(new TextField("path", relativePath, Field.Store.YES));
+		document.add(new TextField("originalContent", post.originalContent(), Field.Store.YES));
+		document.add(new TextField("content", htmlToText(post.processedContent()), Field.Store.YES));
+		document.add(new LongPoint("time", post.date().getTime()));
+		document.add(new StringField("key", buildHashKeyFor(post), Field.Store.YES));
+		return document;
+	}
 
-    private boolean isValidFile(File fileName) {
-        var lcFn = fileName.getName().toLowerCase(Locale.ROOT);
-        for (var e : this.extensions)
-            if (lcFn.contains(e))
-                return true;
-        return false;
-    }
+	private boolean isValidFile(File fileName) {
+		var lcFn = fileName.getName().toLowerCase(Locale.ROOT);
+		for (var e : this.extensions)
+			if (lcFn.contains(e))
+				return true;
+		return false;
+	}
 
-    @Override
-    public void onApplicationEvent(ApplicationEvent event) {
-        if (event instanceof SiteUpdatedEvent || event instanceof ApplicationReadyEvent) {
-            this.rebuildIndex();
-        }
-    }
+	@Override
+	public void onApplicationEvent(ApplicationEvent event) {
+		if (event instanceof SiteUpdatedEvent || event instanceof ApplicationReadyEvent) {
+			this.rebuildIndex();
+		}
+	}
 
-    private record BlogPostKey(String path, BlogPost blogPost) {
-    }
+	private record BlogPostKey(String path, BlogPost blogPost) {
+	}
 
 }
