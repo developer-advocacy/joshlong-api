@@ -99,14 +99,18 @@ class DefaultBlogPostService implements BlogPostService {
 		return newHtml;
 	}
 
-	private List<String> discoverPreviewParagraphs(String html, int countOfParagraphs) {
+	private record PreviewParagraphsResults(List<String> results, boolean truncated) {
+	}
+
+	private PreviewParagraphsResults discoverPreviewParagraphs(String html, int countOfParagraphs) {
 		var document = Jsoup.parse(html);
 		var ps = document.getElementsByTag("p");
 		var results = new ArrayList<String>();
 		if (ps != null && ps.size() > 0) {
 			ps.forEach(element -> results.add(element.text()));
 		}
-		return results.stream().limit(countOfParagraphs).collect(Collectors.toList());
+		var list = results.stream().limit(countOfParagraphs).collect(Collectors.toList());
+		return new PreviewParagraphsResults(list, results.size() > countOfParagraphs);
 	}
 
 	@SneakyThrows
@@ -123,11 +127,11 @@ class DefaultBlogPostService implements BlogPostService {
 		processedContent = resolveImageSources(this.apiRoot, "/media/", processedContent);
 		var published = header.get("status").toLowerCase(Locale.ROOT).equalsIgnoreCase("published");
 		var images = discoverImages(processedContent);
-		var firstParagraph = discoverPreviewParagraphs(processedContent, 2);
+		var heroParagraphs = discoverPreviewParagraphs(processedContent, 3);
 		var uniquePath = path.toLowerCase(Locale.ROOT).startsWith("/jl/blogpost/")
 				? path.substring("/jl/blogpost/".length()) : path;
 		return new BlogPost(header.get("title"), date, contents, processedContent, published, type, path, uniquePath,
-				images, firstParagraph);
+				images, heroParagraphs.results(), heroParagraphs.truncated());
 	}
 
 	@SneakyThrows

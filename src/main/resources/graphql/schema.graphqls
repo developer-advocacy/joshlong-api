@@ -2,7 +2,7 @@ type Query {
     search (query: String) : [BlogPost]
     blogPostByPath (path: String) : BlogPost
     blogPosts: [BlogPost]
-    recentBlogPosts (count: Int) : [BlogPost]
+    recentBlogPosts(count: Int) : [BlogPost]
     appearances : [Appearance]
     podcasts : [Podcast]
     books: [Content]
@@ -55,6 +55,7 @@ type BlogPost {
     paragraphs: [String]
     heroParagraphs : String
     heroImage  : String
+    heroParagraphsTruncated: Boolean
 }
 
 enum BlogPostContentType {

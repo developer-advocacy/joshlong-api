@@ -1,8 +1,8 @@
 package com.joshlong.blog;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.graphql.data.method.annotation.Argument;
-import org.springframework.graphql.data.method.annotation.MutationMapping;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
@@ -10,7 +10,6 @@ import org.springframework.util.Assert;
 import reactor.core.publisher.Mono;
 
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Locale;
@@ -21,6 +20,7 @@ import java.util.stream.Collectors;
 //        the first paragraph or the first N characters, whichever is fewer, in a given blog. We can look at the <P>
 //        tags, perhaps using the JSOUP parsing, take the first one, and then truncate all but the first N characters of that?
 //        We need this for the 'recent-posts' section of the front page
+@Slf4j
 @Controller
 class ApiGraphQlController {
 
@@ -104,21 +104,13 @@ class ApiGraphQlController {
 
 	@SchemaMapping(typeName = "Podcast", field = "date")
 	String date(Podcast p) {
-		if (null != p.date())
-			return this.isoDateFormat.format(p.date());
-		return null;
+		return null != p.date() ? this.isoDateFormat.format(p.date()) : null;
 	}
-
-	/*
-	 * @MutationMapping IndexRebuildStatus rebuildIndex() { return
-	 * this.indexService.rebuildIndex(); }
-	 */
 
 	@QueryMapping
 	Collection<BlogPost> search(@Argument String query) {
 		return this.indexService.search(query);
 	}
-	//
 
 	@SchemaMapping(typeName = "Appearance", field = "startDate")
 	String startDate(Appearance bp) {
@@ -129,16 +121,10 @@ class ApiGraphQlController {
 	String endDate(Appearance bp) {
 		return isoDateFormat.format(bp.endDate());
 	}
-	//
 
 	@SchemaMapping(typeName = "BlogPost", field = "date")
 	String date(BlogPost bp) {
 		return isoDateFormat.format(bp.date());
-	}
-
-	@SchemaMapping(typeName = "IndexRebuildStatus", field = "date")
-	String indexRebuildStatusDate(IndexRebuildStatus rebuildStatus) {
-		return isoDateFormat.format(rebuildStatus.date());
 	}
 
 	@SchemaMapping(typeName = "BlogPost")
@@ -146,22 +132,30 @@ class ApiGraphQlController {
 		return blogPost.images() != null && blogPost.images().size() > 0 ? blogPost.images().get(0) : null;
 	}
 
+	// private final Map<String, Boolean> truncated = new ConcurrentHashMap<>();
+	//
+	// @EventListener(IndexingFinishedEvent.class)
+	// public void reset() {
+	// this.truncated.clear();
+	// }
+
+	/*
+	 * @SchemaMapping(typeName = "BlogPost") Boolean heroParagraphsTruncated(BlogPost
+	 * post) { var result = this.truncated.getOrDefault(post.pathId(), false);
+	 * log.info("are the hero paragraphs for " + post.title() + " truncated? " + result);
+	 * return result; }
+	 */
+
+	/**
+	 * add each word and check that the length of the current sentence plus the new word
+	 * isn't longer than {@link this#heroParagraphLength}. Once it is, stop collecting
+	 * words.
+	 */
 	@SchemaMapping(typeName = "BlogPost")
 	String heroParagraphs(BlogPost post) {
-		Assert.state(post.paragraphs() != null, () -> "the paragraphs must be non-null");
-		var ctr = 0;
-		var hold = new ArrayList<String>();
-		for (var p : post.paragraphs()) {
-			if ((ctr + p.length()) <= (this.heroParagraphLength)) {
-				hold.add(p);
-			} //
-			else {
-				break;
-			}
-			ctr += p.length();
-		}
-		return (hold.size() == 0) ? post.paragraphs().get(0).substring(0, this.heroParagraphLength)
-				: String.join("", hold);
+		Assert.state(post.paragraphs() != null && post.paragraphs().size() > 0,
+				() -> "the paragraphs must be non-null");
+		return String.join(" ", post.paragraphs());
 	}
 
 	// new for the Spring Tips episodes
