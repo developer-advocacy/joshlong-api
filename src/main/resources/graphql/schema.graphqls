@@ -1,5 +1,5 @@
 type Query {
-    search (query: String) : [BlogPost]
+    search (query: String , offset: Int, pageSize: Int) :  BlogPostSearchResults
     blogPostByPath (path: String) : BlogPost
     blogPosts: [BlogPost]
     recentBlogPosts(count: Int) : [BlogPost]
@@ -9,6 +9,13 @@ type Query {
     livelessons: [Content]
     latestSpringTipsEpisode : SpringTipsEpisode
     springTipsEpisodes : [SpringTipsEpisode]
+}
+
+type BlogPostSearchResults {
+    totalResultsSize : Int
+    offset : Int
+    pageSize : Int
+    posts : [BlogPost ]
 }
 
 type SpringTipsEpisode {

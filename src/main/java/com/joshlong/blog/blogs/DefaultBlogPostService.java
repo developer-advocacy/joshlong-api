@@ -127,7 +127,7 @@ class DefaultBlogPostService implements BlogPostService {
 		processedContent = resolveImageSources(this.apiRoot, "/media/", processedContent);
 		var published = header.get("status").toLowerCase(Locale.ROOT).equalsIgnoreCase("published");
 		var images = discoverImages(processedContent);
-		var heroParagraphs = discoverPreviewParagraphs(processedContent, 3);
+		var heroParagraphs = discoverPreviewParagraphs(processedContent, 1);
 		var uniquePath = path.toLowerCase(Locale.ROOT).startsWith("/jl/blogpost/")
 				? path.substring("/jl/blogpost/".length()) : path;
 		return new BlogPost(header.get("title"), date, contents, processedContent, published, type, path, uniquePath,

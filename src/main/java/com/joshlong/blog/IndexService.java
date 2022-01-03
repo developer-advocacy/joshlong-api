@@ -1,6 +1,5 @@
 package com.joshlong.blog;
 
-import java.util.Collection;
 import java.util.Map;
 
 public interface IndexService {
@@ -15,7 +14,8 @@ public interface IndexService {
 	 * Searches the Lucene index. Supports Lucene queries like
 	 * <CODE> title:2019 and content:"india china"</CODE>
 	 */
-	Collection<BlogPost> search(String query);
+ 	BlogPostSearchResults search(String query , int offset, int size);
+
 
 	Map<String, BlogPost> getIndex();
 
