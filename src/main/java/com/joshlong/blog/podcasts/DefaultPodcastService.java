@@ -55,18 +55,21 @@ class DefaultPodcastService implements PodcastService {
 		});
 		synchronized (this.monitor) {
 			this.podcasts.clear();
-			this.podcasts.addAll(response.stream().map(node -> {
-				var id = JsonUtils.valueOrNull(node, "id", Integer::parseInt);
-				var uid = JsonUtils.valueOrNull(node, "uid");
-				var title = JsonUtils.valueOrNull(node, "title");
-				var date = new Date(node.get("date").longValue());
-				var episodePhotoUri = JsonUtils.valueOrNull(node, "episodePhotoUri", this::buildUrlFrom);
-				var episodeUri = JsonUtils.valueOrNull(node, "episodeUri", u -> buildUrlFrom(root + u));
-				var description = JsonUtils.valueOrNull(node, "description");
-				return new Podcast(id, uid, title, date, episodePhotoUri, episodeUri, description);
-			})//
+			this.podcasts.addAll(response//
+					.stream()//
+					.map(node -> {
+						var id = JsonUtils.valueOrNull(node, "id", Integer::parseInt);
+						var uid = JsonUtils.valueOrNull(node, "uid");
+						var title = JsonUtils.valueOrNull(node, "title");
+						var date = new Date(node.get("date").longValue());
+						var episodePhotoUri = JsonUtils.valueOrNull(node, "episodePhotoUri", this::buildUrlFrom);
+						var episodeUri = JsonUtils.valueOrNull(node, "episodeUri", u -> buildUrlFrom(root + u));
+						var description = JsonUtils.valueOrNull(node, "description");
+						return new Podcast(id, uid, title, date, episodePhotoUri, episodeUri, description);
+					})//
 					.sorted(Comparator.comparing(Podcast::date).reversed())//
-					.toList());
+					.toList() //
+			);
 		}
 	}
 
