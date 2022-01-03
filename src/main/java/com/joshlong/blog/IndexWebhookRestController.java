@@ -32,6 +32,9 @@ class IndexWebhookRestController {
 	IndexWebhookRestController(IndexService indexService, BlogProperties properties) {
 		this.indexService = indexService;
 		this.properties = properties;
+
+		log.info(System.getenv("BLOG_INDEX_REBUILD_KEY"));
+		log.info(this.properties.indexRebuildKey());
 	}
 
 	@PostMapping("/index")
