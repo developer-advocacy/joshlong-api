@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Log4j2
 class DefaultPodcastService implements PodcastService {
 
-	private final URL root = new URL("http://api.bootifulpodcast.fm");
+	private final URL root = new URL("https://api.bootifulpodcast.fm");
 
 	private final URL uri = new URL(this.root + "/site/podcasts");
 
