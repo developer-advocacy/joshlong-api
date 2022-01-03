@@ -19,6 +19,8 @@ spec:
           imagePullPolicy: Always
           name: api
           env:
+            - name: BLOG_RESET_ON_REBUILD
+              value: "true"
             - name: BLOG_API_SERVER_URI
               value: "https://api.joshlong.com"
             - name: LANG
