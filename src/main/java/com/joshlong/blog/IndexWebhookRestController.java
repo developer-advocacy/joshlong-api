@@ -29,37 +29,30 @@ class IndexWebhookRestController {
 
 	private final BlogProperties properties;
 
-	private final String computedKey;
-
 	IndexWebhookRestController(IndexService indexService, BlogProperties properties) {
 		this.indexService = indexService;
 		this.properties = properties;
-		this.computedKey = this.properties.indexRebuildKey();
 	}
 
 	@PostMapping("/index")
 	ResponseEntity<?> refresh(RequestEntity<String> requestEntity) throws Exception {
 		var secret = this.properties.indexRebuildKey();
-		var hashOfTheRequestWithMyCopyOfTheSecret = HmacUtils
-				.generateHmac256(Objects.requireNonNull(requestEntity.getBody()), secret.getBytes());
-		var hashOfTheRequestWithTheirCopyOfTheSecret = getGithubWebhookRequestSha256HeaderValue(requestEntity);
-
-		log.info("mine: " + hashOfTheRequestWithMyCopyOfTheSecret);
-		log.info("theirs: " + hashOfTheRequestWithTheirCopyOfTheSecret);
-
-		if (StringUtils.hasText(hashOfTheRequestWithTheirCopyOfTheSecret)
-				&& StringUtils.hasText(hashOfTheRequestWithMyCopyOfTheSecret)) {
-			if (hashOfTheRequestWithTheirCopyOfTheSecret.contains(hashOfTheRequestWithMyCopyOfTheSecret))
-				return ResponseEntity.ok(indexService.rebuildIndex());
-
+		var theirHash = HmacUtils.generateHmac256(Objects.requireNonNull(requestEntity.getBody()), secret.getBytes());
+		var myHash = getGithubWebhookRequestSha256HeaderValue(requestEntity);
+		if (log.isDebugEnabled()) {
+			requestEntity.getHeaders().forEach((k, v) -> log.debug(k + "=" + v));
+			log.debug("mine: " + theirHash);
+			log.debug("theirs: " + myHash);
 		}
-
+		if (StringUtils.hasText(myHash) && StringUtils.hasText(theirHash)) {
+			if (myHash.contains(theirHash))
+				return ResponseEntity.ok(indexService.rebuildIndex());
+		}
 		return ResponseEntity.badRequest().build();
 	}
 
 	private String getGithubWebhookRequestSha256HeaderValue(RequestEntity<String> requestEntity) {
 		var headers = requestEntity.getHeaders();
-		headers.forEach((k, v) -> log.info(k + "=" + v));
 		var headerKey = "X-Hub-Signature-256";
 		if (headers.containsKey(headerKey)) {
 			var strings = headers.get(headerKey);
