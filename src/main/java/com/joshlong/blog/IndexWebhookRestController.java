@@ -61,7 +61,7 @@ class IndexWebhookRestController {
 					return ResponseEntity.ok(this.indexService.rebuildIndex());
 				} //
 				else {
-					log.info("the key " + deriveKey() + " is not within " + key);
+					log.info("the key " + hash + " is not within " + key);
 				}
 			}
 		}
