@@ -19,6 +19,11 @@ spec:
           imagePullPolicy: Always
           name: api
           env:
+            - name: BLOG_INDEX_REBUILD_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: joshlong-com-api-secrets
+                  key: BLOG_INDEX_REBUILD_KEY
             - name: BLOG_RESET_ON_REBUILD
               value: "true"
             - name: BLOG_API_SERVER_URI
