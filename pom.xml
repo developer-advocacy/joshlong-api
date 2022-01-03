@@ -146,7 +146,8 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
+               <!--
+               <configuration>
                     <classifier>${repackage.classifier}</classifier>
                     <image>
                         <builder>paketobuildpacks/builder:tiny</builder>
@@ -155,6 +156,7 @@
                         </env>
                     </image>
                 </configuration>
+                -->
             </plugin>
 
 
