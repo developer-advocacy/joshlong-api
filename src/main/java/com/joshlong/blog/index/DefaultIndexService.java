@@ -120,26 +120,13 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 	@Override
 	@SneakyThrows
 	public BlogPostSearchResults search(String query, int offset, int pageSize) {
-
 		var results = this.searchIndex(query, this.index.size()) //
 				.stream() //
 				.map(this.index::get) //
 				.sorted(Comparator.comparing(BlogPost::date).reversed()) //
 				.toList();
-
-		var returningList = (List<BlogPost>) null;
-
-		if (results.size() < pageSize)
-			returningList = results;
-
-		else if (offset > results.size() || (offset + pageSize) > results.size())
-			returningList = Collections.emptyList();
-
-		else
-			returningList = results.subList(offset, offset + pageSize);
-
+		var returningList = results.subList(offset, Math.min(results.size(), offset + pageSize));
 		return new BlogPostSearchResults(results.size(), offset, pageSize, returningList);
-
 	}
 
 	private List<String> searchIndex(String queryStr, int maxResults) {

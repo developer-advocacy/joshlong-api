@@ -74,8 +74,12 @@ class ApiGraphQlController {
 	}
 
 	@QueryMapping
-	Collection<BlogPost> recentBlogPosts(@Argument int count) {
-		return postsOrderedNewestToOldest.stream().limit(count).toList();
+	BlogPostSearchResults recentBlogPosts(@Argument int offset, @Argument int pageSize) {
+		var end = Math.min((offset + pageSize), this.postsOrderedNewestToOldest.size());
+		var results = this.postsOrderedNewestToOldest.subList(offset, end);
+		log.info("recentBlogPosts (" + offset + "," + pageSize + "): " + results.size());
+		return new BlogPostSearchResults(this.postsOrderedNewestToOldest.size(), offset, pageSize, results);
+
 	}
 
 	@QueryMapping
