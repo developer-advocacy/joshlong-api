@@ -116,22 +116,22 @@ class DefaultBlogPostService implements BlogPostService {
 	@SneakyThrows
 	private BlogPost buildBlogPostFrom(BlogPostContentType type, String path, String contents) {
 		var headerDivider = "~~~~~~";
-
 		Assert.state(contents.contains(headerDivider), () -> "this blog  does not contain any headers! " + contents);
 		var parts = contents.split(headerDivider);
 		var header = buildHeader(parts[0]);
+		var listed = Boolean.parseBoolean(header.getOrDefault("listed", "true"));
 		var dateFromHeaderString = header.get("date");
 		Assert.notNull(dateFromHeaderString, () -> "the blog must have a published date!");
 		var date = buildHeaderDate(dateFromHeaderString);
-		var processedContent = this.markdownService.convertMarkdownTemplateToHtml(parts[1]);
-		processedContent = resolveImageSources(this.apiRoot, "/media/", processedContent);
+		var processedContent = resolveImageSources(this.apiRoot, "/media/",
+				this.markdownService.convertMarkdownTemplateToHtml(parts[1]));
 		var published = header.get("status").toLowerCase(Locale.ROOT).equalsIgnoreCase("published");
 		var images = discoverImages(processedContent);
 		var heroParagraphs = discoverPreviewParagraphs(processedContent, 1);
 		var uniquePath = path.toLowerCase(Locale.ROOT).startsWith("/jl/blogpost/")
 				? path.substring("/jl/blogpost/".length()) : path;
 		return new BlogPost(header.get("title"), date, contents, processedContent, published, type, path, uniquePath,
-				images, heroParagraphs.results(), heroParagraphs.truncated());
+				images, heroParagraphs.results(), heroParagraphs.truncated(), listed);
 	}
 
 	@SneakyThrows

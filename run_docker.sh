@@ -10,6 +10,7 @@ docker run \
 	-e BLOG_RESET_ON_REBUILD=true \
 	-e JAVA_OPTS="-Dsun.jnu.encoding=UTF-8 -Dfile.encoding=UTF-8 " \
  	-e LANG=en \
+ 	-p 8080:8080 \
  	docker.io/library/api:0.0.1-SNAPSHOT
 
 

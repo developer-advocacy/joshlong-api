@@ -1,4 +1,4 @@
-package com.joshlong.blog.index.graalvm;
+package com.joshlong.blog.index.nativex;
 
 import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.lib.CoreConfig;

@@ -1,9 +1,7 @@
 package com.joshlong.blog;
 
-import com.joshlong.blog.index.IndexingFinishedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.context.event.EventListener;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
@@ -13,24 +11,15 @@ import reactor.core.publisher.Mono;
 
 import java.text.DateFormat;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Locale;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.ToLongFunction;
-import java.util.stream.Collectors;
 
-// todo to support this view of the blogs, we'll need to develop a feature on the server-side that shows us
-//        the first paragraph or the first N characters, whichever is fewer, in a given blog. We can look at the <P>
-//        tags, perhaps using the JSOUP parsing, take the first one, and then truncate all but the first N characters of that?
-//        We need this for the 'recent-posts' section of the front page
+/**
+ * @author Josh Long
+ */
 @Slf4j
 @Controller
 class ApiGraphQlController {
 
-	private final List<BlogPost> postsOrderedNewestToOldest = new CopyOnWriteArrayList<>();
-
-	private final IndexService indexService;
+	private final BlogPostSearchService blogPostSearchService;
 
 	private final AppearanceService appearanceService;
 
@@ -44,11 +33,11 @@ class ApiGraphQlController {
 
 	private final ContentService livelessonsContentService;
 
-	ApiGraphQlController(IndexService indexService,
+	ApiGraphQlController(BlogPostSearchService blogPostSearchService,
 			@Qualifier("booksContentService") ContentService booksContentService, SpringTipsService springTipsService,
 			@Qualifier("livelessonsContentService") ContentService livelessonsContentService,
 			AppearanceService appearanceService, PodcastService podcastService, DateFormat isoDateFormat) {
-		this.indexService = indexService;
+		this.blogPostSearchService = blogPostSearchService;
 		this.appearanceService = appearanceService;
 		this.podcastService = podcastService;
 		this.isoDateFormat = isoDateFormat;
@@ -57,49 +46,24 @@ class ApiGraphQlController {
 		this.springTipsService = springTipsService;
 	}
 
-	@EventListener(IndexingFinishedEvent.class)
-	public void refresh() {
-		log.info("caching the blogPost collection newest to oldest.");
-		var index = this.indexService.getIndex();
-		var blogs = index.values();
-		var results = blogs.stream() //
-				.sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed()) //
-				.toList();
-		this.postsOrderedNewestToOldest.addAll(results);
-	}
-
 	@QueryMapping
 	Collection<Appearance> appearances() {
 		return this.appearanceService.getAppearances();
 	}
 
 	@QueryMapping
-	BlogPostSearchResults recentBlogPosts(@Argument int offset, @Argument int pageSize) {
-		var end = Math.min((offset + pageSize), this.postsOrderedNewestToOldest.size());
-		var results = this.postsOrderedNewestToOldest.subList(offset, end);
-		log.info("recentBlogPosts (" + offset + "," + pageSize + "): " + results.size());
-		return new BlogPostSearchResults(this.postsOrderedNewestToOldest.size(), offset, pageSize, results);
-
+	BlogPostSearchResults search(@Argument String query, @Argument int offset, @Argument int pageSize) {
+		return this.blogPostSearchService.search(query, offset, pageSize);
 	}
 
 	@QueryMapping
-	BlogPostSearchResults search(@Argument String query, @Argument int offset, @Argument int pageSize) {
-		return this.indexService.search(query, offset, pageSize);
+	BlogPostSearchResults recentBlogPosts(@Argument int offset, @Argument int pageSize) {
+		return this.blogPostSearchService.recentBlogPosts(offset, pageSize);
 	}
 
 	@QueryMapping
 	Mono<BlogPost> blogPostByPath(@Argument String path) {
-		var index = this.indexService.getIndex();
-		var nk = path.toLowerCase(Locale.ROOT);
-
-		if (index.containsKey(nk))
-			return Mono.just(index.get(nk));
-
-		nk = "/jl/blogpost/" + nk;
-		if (index.containsKey(nk))
-			return Mono.just(index.get(nk));
-
-		return Mono.empty();
+		return blogPostSearchService.blogPostByPath(path);
 	}
 
 	@QueryMapping

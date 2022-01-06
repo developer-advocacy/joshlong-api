@@ -1,7 +1,6 @@
 package com.joshlong.blog;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -48,11 +47,6 @@ import static org.springframework.nativex.hint.TypeAccess.*;
 @SpringBootApplication
 @EnableConfigurationProperties(BlogProperties.class)
 public class Application {
-
-	@Bean
-	ApplicationRunner runner() {
-		return args -> System.getenv().forEach((k, v) -> System.out.println(k + "=" + v));
-	}
 
 	@Bean
 	WebClient webClient(WebClient.Builder builder) {
