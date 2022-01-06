@@ -1,8 +1,11 @@
 type Query {
+
+    abstracts: String
     search (query: String , offset: Int, pageSize: Int) :  BlogPostSearchResults
     blogPostByPath (path: String) : BlogPost
     blogPosts: [BlogPost]
     recentBlogPosts(offset: Int, pageSize: Int) : BlogPostSearchResults
+
     appearances : [Appearance]
     podcasts : [Podcast]
     books: [Content]

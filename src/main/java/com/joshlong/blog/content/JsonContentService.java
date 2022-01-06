@@ -19,7 +19,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
 
 @Slf4j
-class DefaultContentService implements ContentService {
+class JsonContentService implements ContentService<Collection<Content>> {
 
 	private final Resource resource;
 
@@ -27,7 +27,7 @@ class DefaultContentService implements ContentService {
 
 	private final List<Content> contents = new CopyOnWriteArrayList<>();
 
-	DefaultContentService(Resource resource, ObjectMapper objectMapper) {
+	JsonContentService(Resource resource, ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 		this.resource = resource;
 	}
@@ -36,6 +36,10 @@ class DefaultContentService implements ContentService {
 	public Collection<Content> getContent() {
 		return this.contents;
 	}
+
+	/*
+	 * @Override public Collection<Content> getContent() { return this.contents; }
+	 */
 
 	@SneakyThrows
 	private URL buildUrlFrom(String url) {

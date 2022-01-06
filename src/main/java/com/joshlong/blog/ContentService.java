@@ -2,8 +2,8 @@ package com.joshlong.blog;
 
 import java.util.Collection;
 
-public interface ContentService {
+public interface ContentService<T> {
 
-	Collection<Content> getContent();
+	T getContent();
 
 }

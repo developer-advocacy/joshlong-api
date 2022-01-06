@@ -1,4 +1,4 @@
-package com.joshlong.blog.utils.graalvm;
+package com.joshlong.blog.utils.nativex;
 
 import org.springframework.nativex.hint.AotProxyHint;
 import org.springframework.nativex.hint.ProxyBits;

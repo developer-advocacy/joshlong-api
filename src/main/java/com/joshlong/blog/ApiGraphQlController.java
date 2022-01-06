@@ -40,18 +40,23 @@ class ApiGraphQlController {
 
 	private final SpringTipsService springTipsService;
 
-	private final ContentService booksContentService;
+	private final ContentService<String> abstractsContentService;
 
-	private final ContentService livelessonsContentService;
+	private final ContentService<Collection<Content>> booksContentService;
+
+	private final ContentService<Collection<Content>> livelessonsContentService;
 
 	ApiGraphQlController(IndexService indexService,
-			@Qualifier("booksContentService") ContentService booksContentService, SpringTipsService springTipsService,
-			@Qualifier("livelessonsContentService") ContentService livelessonsContentService,
+			@Qualifier("abstractsContentService") ContentService<String> abstractsContentService,
+			@Qualifier("booksContentService") ContentService<Collection<Content>> booksContentService,
+			SpringTipsService springTipsService,
+			@Qualifier("livelessonsContentService") ContentService<Collection<Content>> livelessonsContentService,
 			AppearanceService appearanceService, PodcastService podcastService, DateFormat isoDateFormat) {
 		this.indexService = indexService;
 		this.appearanceService = appearanceService;
 		this.podcastService = podcastService;
 		this.isoDateFormat = isoDateFormat;
+		this.abstractsContentService = abstractsContentService;
 		this.booksContentService = booksContentService;
 		this.livelessonsContentService = livelessonsContentService;
 		this.springTipsService = springTipsService;
@@ -66,6 +71,11 @@ class ApiGraphQlController {
 				.sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed()) //
 				.toList();
 		this.postsOrderedNewestToOldest.addAll(results);
+	}
+
+	@QueryMapping
+	String abstracts() {
+		return this.abstractsContentService.getContent();
 	}
 
 	@QueryMapping
