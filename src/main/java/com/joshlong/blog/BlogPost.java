@@ -9,5 +9,5 @@ import java.util.List;
 public record BlogPost(String title, Date date, String originalContent, String processedContent, boolean published,
 		BlogPostContentType type, String path,
 		/* this is the unique bit without the /jl/blogPost/ */ String pathId, List<String> images,
-		List<String> paragraphs, boolean heroParagraphsTruncated) {
+		List<String> paragraphs, boolean heroParagraphsTruncated, boolean listed) {
 }

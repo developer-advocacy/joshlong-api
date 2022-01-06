@@ -1,6 +1,3 @@
-
-spring.graphql.schema.locations=graphql/schema.graphqls
-
 org.springframework.nativex.type.NativeConfiguration=\
   com.joshlong.blog.nativex.GraphQlNativeHints,\
   com.joshlong.blog.index.nativex.JGitNativeConfiguration,\

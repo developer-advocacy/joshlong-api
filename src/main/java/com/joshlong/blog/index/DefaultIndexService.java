@@ -8,7 +8,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.Term;
-import org.commonmark.internal.util.Html5Entities;
 import org.eclipse.jgit.api.Git;
 import org.jsoup.Jsoup;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -16,14 +15,10 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
 import org.springframework.util.Assert;
-import org.springframework.util.FileCopyUtils;
 import org.springframework.util.FileSystemUtils;
 
 import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.URI;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.DateFormat;
@@ -73,7 +68,9 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 
 	@SneakyThrows
 	private void ensureClonedRepository() {
+
 		log.info("should reset Git clone? " + this.resetOnRebuild);
+
 		if (!this.resetOnRebuild)
 			return;
 
@@ -119,18 +116,21 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 
 	@Override
 	@SneakyThrows
-	public BlogPostSearchResults search(String query, int offset, int pageSize) {
+	public BlogPostSearchResults search(String query, int offset, int pageSize, boolean listedOnly) {
 		var results = this.searchIndex(query, this.index.size()) //
 				.stream() //
 				.map(this.index::get) //
 				.sorted(Comparator.comparing(BlogPost::date).reversed()) //
-				.toList();
+				.filter(bp -> listedOnly && bp.listed()).toList();
 		var returningList = results.subList(offset, Math.min(results.size(), offset + pageSize));
+		log.info("search('" + query + "'," + offset + "," + pageSize + "," + listedOnly + ")");
 		return new BlogPostSearchResults(results.size(), offset, pageSize, returningList);
 	}
 
 	private List<String> searchIndex(String queryStr, int maxResults) {
-		return this.luceneTemplate.search(queryStr, maxResults, document -> document.get("path"));
+		var list = this.luceneTemplate.search(queryStr, maxResults, document -> document.get("path"));
+		log.info("the result is " + list.size());
+		return list;
 	}
 
 	private String computePath(File file, File contentDirectory) {

@@ -14,7 +14,7 @@ public interface IndexService {
 	 * Searches the Lucene index. Supports Lucene queries like
 	 * <CODE> title:2019 and content:"india china"</CODE>
 	 */
-	BlogPostSearchResults search(String query, int offset, int size);
+	BlogPostSearchResults search(String query, int offset, int size, boolean includeListed);
 
 	Map<String, BlogPost> getIndex();
 
