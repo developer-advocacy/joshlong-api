@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-mvn -DskipTests=true spring-boot:build-image
+mvn -f ../pom.xml -DskipTests=true spring-javaformat:apply clean package spring-boot:build-image
