@@ -44,7 +44,8 @@ import static org.springframework.nativex.hint.TypeAccess.*;
 		types = { Podcast.class, BlogPostContentType.class, IndexRebuildStatus.class, Content.class, BlogPost.class,
 				Appearance.class, SpringTipsEpisode.class })
 @Slf4j
-@ResourceHint(patterns = { "graphql/schema.graphqls", "graphiql/index.html" })
+@ResourceHint(patterns = {
+	"graphql/schema.graphqls", "graphiql/index.html" })
 @SpringBootApplication
 @EnableConfigurationProperties(BlogProperties.class)
 public class Application {
