@@ -1,7 +1,8 @@
 package com.joshlong.blog;
 
 import org.springframework.graphql.data.method.annotation.Argument;
-import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 public interface BlogPostSearchService {
 
@@ -9,6 +10,8 @@ public interface BlogPostSearchService {
 
 	BlogPostSearchResults search(@Argument String query, @Argument int offset, @Argument int pageSize);
 
-	Mono<BlogPost> blogPostByPath(@Argument String path);
+	BlogPost blogPostByPath(@Argument String path);
+
+	List<BlogPost> getBlogPosts();
 
 }

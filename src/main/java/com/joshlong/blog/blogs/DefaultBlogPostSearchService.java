@@ -1,21 +1,20 @@
 package com.joshlong.blog.blogs;
 
-import com.joshlong.blog.BlogPost;
-import com.joshlong.blog.BlogPostSearchResults;
-import com.joshlong.blog.BlogPostSearchService;
-import com.joshlong.blog.IndexService;
+import com.joshlong.blog.*;
 import com.joshlong.blog.index.IndexingFinishedEvent;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.ToLongFunction;
+import java.util.stream.Stream;
 
 /**
  * Provides finder-methods to search the content in the {@link IndexService}
@@ -28,8 +27,11 @@ class DefaultBlogPostSearchService implements BlogPostSearchService {
 
 	private final IndexService indexService;
 
-	DefaultBlogPostSearchService(IndexService indexService) {
+	private final ApplicationEventPublisher publisher;
+
+	DefaultBlogPostSearchService(ApplicationEventPublisher publisher, IndexService indexService) {
 		this.indexService = indexService;
+		this.publisher = publisher;
 	}
 
 	@EventListener(IndexingFinishedEvent.class)
@@ -41,6 +43,7 @@ class DefaultBlogPostSearchService implements BlogPostSearchService {
 				.sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed()) //
 				.toList();
 		this.postsOrderedNewestToOldest.addAll(results);
+		publisher.publishEvent(new BlogPostsUpdatedEvent(new ArrayList<>(this.postsOrderedNewestToOldest)));
 	}
 
 	@Override
@@ -58,12 +61,21 @@ class DefaultBlogPostSearchService implements BlogPostSearchService {
 	}
 
 	@Override
-	public Mono<BlogPost> blogPostByPath(@Argument String path) {
+	public BlogPost blogPostByPath(@Argument String path) {
 		var index = this.indexService.getIndex();
 		var nk = path.toLowerCase(Locale.ROOT);
-		var blogPosts = List.of(nk, "/" + nk, "/jl/blogPost/" + nk).stream().map(t -> t.toLowerCase(Locale.ROOT))
-				.filter(index::containsKey).map(index::get).map(Mono::just).toList();
-		return blogPosts.size() > 0 ? blogPosts.get(0) : Mono.empty();
+		var blogPosts = Stream//
+				.of(nk, "/" + nk, "/jl/blogPost/" + nk)//
+				.map(t -> t.toLowerCase(Locale.ROOT))//
+				.filter(index::containsKey)//
+				.map(index::get)//
+				.toList();
+		return blogPosts.size() > 0 ? blogPosts.get(0) : null;
+	}
+
+	@Override
+	public List<BlogPost> getBlogPosts() {
+		return this.postsOrderedNewestToOldest;
 	}
 
 }

@@ -7,7 +7,6 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.Assert;
-import reactor.core.publisher.Mono;
 
 import java.text.DateFormat;
 import java.util.Collection;
@@ -35,11 +34,15 @@ class ApiGraphQlController {
 
 	private final ContentService<Collection<Content>> livelessonsContentService;
 
-	ApiGraphQlController(@Qualifier("abstractsContentService") ContentService<String> abstractsContentService,
-			@Qualifier("booksContentService") ContentService<Collection<Content>> booksContentService,
-			@Qualifier("livelessonsContentService") ContentService<Collection<Content>> livelessonsContentService,
-			SpringTipsService springTipsService, BlogPostSearchService blogPostSearchService,
-			AppearanceService appearanceService, PodcastService podcastService, DateFormat isoDateFormat) {
+	ApiGraphQlController(@Qualifier("abstractsContentService") ContentService<String> abstractsContentService, //
+			@Qualifier("booksContentService") ContentService<Collection<Content>> booksContentService, //
+			@Qualifier("livelessonsContentService") ContentService<Collection<Content>> livelessonsContentService, //
+			SpringTipsService springTipsService, //
+			BlogPostSearchService blogPostSearchService, //
+			AppearanceService appearanceService, //
+			PodcastService podcastService, //
+			DateFormat isoDateFormat//
+	) {
 		this.blogPostSearchService = blogPostSearchService;
 		this.appearanceService = appearanceService;
 		this.podcastService = podcastService;
@@ -71,7 +74,7 @@ class ApiGraphQlController {
 	}
 
 	@QueryMapping
-	Mono<BlogPost> blogPostByPath(@Argument String path) {
+	BlogPost blogPostByPath(@Argument String path) {
 		return blogPostSearchService.blogPostByPath(path);
 	}
 
