@@ -43,7 +43,6 @@ class FeedRestController {
 		synchronized (this.posts) {
 			this.posts.clear();
 			this.posts.addAll(posts);
-
 			var blogPosts = this.posts.stream()//
 					.map(new BlogPostSyndEntryConvertor())//
 					.toList();
@@ -51,6 +50,7 @@ class FeedRestController {
 			var feed = this.feeds.buildFeed("rss_2.0", rss.title(), rss.link(), rss.description(), blogPosts);
 			var xml = this.feeds.render(feed);
 			this.renderedXml.set(xml);
+			log.info("built updated RSS feed ");
 		}
 
 	}
@@ -89,8 +89,7 @@ class Feeds {
 		return output.outputString(feed);
 	}
 
-	SyndFeed buildFeed(String feedType, String title, String link, String description, List<SyndEntry> posts)
-			throws Exception {
+	SyndFeed buildFeed(String feedType, String title, String link, String description, List<SyndEntry> posts) {
 		var feed = new SyndFeedImpl();
 		feed.setFeedType(feedType);
 		feed.setTitle(title);

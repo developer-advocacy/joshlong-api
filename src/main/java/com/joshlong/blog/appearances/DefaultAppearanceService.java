@@ -19,7 +19,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.ToLongFunction;
-import java.util.stream.Collectors;
 
 @Slf4j
 class DefaultAppearanceService implements AppearanceService {
@@ -28,7 +27,7 @@ class DefaultAppearanceService implements AppearanceService {
 
 	private final ZoneId defaultZoneId = ZoneId.systemDefault();
 
-	private final TypeReference<Collection<JsonNode>> typeRef = new TypeReference<Collection<JsonNode>>() {
+	private final TypeReference<Collection<JsonNode>> typeRef = new TypeReference<>() {
 	};
 
 	private final File appearancesRoot;
@@ -49,7 +48,7 @@ class DefaultAppearanceService implements AppearanceService {
 					.map(this::buildAppearanceFrom)//
 					.sorted(Comparator.comparingLong((ToLongFunction<Appearance>) value -> value.startDate().getTime())
 							.reversed())//
-					.collect(Collectors.toList()));
+					.toList());
 		}
 	}
 

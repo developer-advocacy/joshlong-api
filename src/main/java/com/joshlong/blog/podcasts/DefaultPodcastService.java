@@ -3,9 +3,9 @@ package com.joshlong.blog.podcasts;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.joshlong.blog.SiteUpdatedEvent;
 import com.joshlong.blog.Podcast;
 import com.joshlong.blog.PodcastService;
+import com.joshlong.blog.SiteUpdatedEvent;
 import com.joshlong.blog.utils.JsonUtils;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
 
 @Log4j2
 class DefaultPodcastService implements PodcastService {

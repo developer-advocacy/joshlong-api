@@ -99,9 +99,6 @@ class DefaultBlogPostService implements BlogPostService {
 		return newHtml;
 	}
 
-	private record PreviewParagraphsResults(List<String> results, boolean truncated) {
-	}
-
 	private PreviewParagraphsResults discoverPreviewParagraphs(String html, int countOfParagraphs) {
 		var document = Jsoup.parse(html);
 		var ps = document.getElementsByTag("p");
@@ -150,6 +147,9 @@ class DefaultBlogPostService implements BlogPostService {
 				map.put((String) key, (props.getProperty((String) key) + "").trim());
 			return map;
 		}
+	}
+
+	private record PreviewParagraphsResults(List<String> results, boolean truncated) {
 	}
 
 }

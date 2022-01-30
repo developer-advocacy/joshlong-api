@@ -48,6 +48,10 @@ import static org.springframework.nativex.hint.TypeAccess.*;
 @EnableConfigurationProperties(BlogProperties.class)
 public class Application {
 
+	public static void main(String[] args) {
+		SpringApplication.run(Application.class, args);
+	}
+
 	@Bean
 	WebClient webClient(WebClient.Builder builder) {
 		return builder.build();
@@ -73,10 +77,6 @@ public class Application {
 			if (NativeDetector.inNativeImage())
 				builder.schemaResources(new ClassPathResource("graphql/schema.graphqls"));
 		};
-	}
-
-	public static void main(String[] args) {
-		SpringApplication.run(Application.class, args);
 	}
 
 }

@@ -20,7 +20,6 @@ import java.util.List;
 import static org.springframework.nativex.hint.TypeAccess.*;
 
 /**
- *
  * Provides hints for Spring GraphQL
  *
  * @author Josh Long
