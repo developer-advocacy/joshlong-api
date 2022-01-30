@@ -81,7 +81,6 @@ class BlogIndexContentResolver implements Function<String, String> {
 	public String apply(String key) {
 		var index = this.reference.get();
 		var post = index.getOrDefault(key, null);
-		log.info("looking for the content for key '" + key + "'");
 		Assert.notNull(post, "the blog post could not be found with key " + key);
 		return post.processedContent();
 	}
