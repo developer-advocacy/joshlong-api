@@ -5,9 +5,9 @@ import org.springframework.context.ApplicationEvent;
 import java.util.Collections;
 import java.util.List;
 
-public class BlogPostsUpdatedEvent extends ApplicationEvent {
+public class BlogPostsOrderedEvent extends ApplicationEvent {
 
-	public BlogPostsUpdatedEvent(List<BlogPost> posts) {
+	public BlogPostsOrderedEvent(List<BlogPost> posts) {
 		super(posts);
 	}
 

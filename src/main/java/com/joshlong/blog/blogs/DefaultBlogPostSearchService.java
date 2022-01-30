@@ -43,7 +43,7 @@ class DefaultBlogPostSearchService implements BlogPostSearchService {
 				.sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed()) //
 				.toList();
 		this.postsOrderedNewestToOldest.addAll(results);
-		publisher.publishEvent(new BlogPostsUpdatedEvent(new ArrayList<>(this.postsOrderedNewestToOldest)));
+		publisher.publishEvent(new BlogPostsOrderedEvent(new ArrayList<>(this.postsOrderedNewestToOldest)));
 	}
 
 	@Override

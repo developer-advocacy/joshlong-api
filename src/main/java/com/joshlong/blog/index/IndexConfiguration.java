@@ -43,7 +43,7 @@ public class IndexConfiguration {
 
 		@EventListener
 		public void indexFinished(IndexingFinishedEvent finishedEvent) {
-			log.info("index build finished " + this.dateFormat.format(finishedEvent.getSource()));
+			log.info("index build finished " + this.dateFormat.format(finishedEvent.getSource().date()));
 		}
 
 	}

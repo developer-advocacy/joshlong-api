@@ -104,7 +104,7 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 		var now = new Date();
 		Assert.state(this.index.size() > 0, () -> "there are no entries in the content index. "
 				+ "Something's wrong! Ensure you have content registered.");
-		this.publisher.publishEvent(new IndexingFinishedEvent(now));
+		this.publisher.publishEvent(new IndexingFinishedEvent(this.index, now));
 		return new IndexRebuildStatus(this.index.size(), now);
 
 	}
