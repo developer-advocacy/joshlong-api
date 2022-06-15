@@ -5,9 +5,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.NativeDetector;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.graphql.boot.GraphQlSourceBuilderCustomizer;
 import org.springframework.http.HttpMethod;
 import org.springframework.nativex.hint.NativeHint;
 import org.springframework.nativex.hint.ResourceHint;
@@ -68,14 +65,6 @@ public class Application {
 				log.info("the CORS hosts are " + Arrays.toString(properties.corsHosts()));
 				registry.addMapping("/**").allowedOrigins(properties.corsHosts()).allowedMethods(methods).maxAge(3600);
 			}
-		};
-	}
-
-	@Bean
-	GraphQlSourceBuilderCustomizer graphQlSourceBuilderCustomizer() {
-		return builder -> {
-			if (NativeDetector.inNativeImage())
-				builder.schemaResources(new ClassPathResource("graphql/schema.graphqls"));
 		};
 	}
 

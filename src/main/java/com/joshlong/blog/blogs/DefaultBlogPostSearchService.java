@@ -23,62 +23,62 @@ import java.util.stream.Stream;
 @Slf4j
 class DefaultBlogPostSearchService implements BlogPostSearchService {
 
-    private final List<BlogPost> postsOrderedNewestToOldest = new CopyOnWriteArrayList<>();
+	private final List<BlogPost> postsOrderedNewestToOldest = new CopyOnWriteArrayList<>();
 
-    private final IndexService indexService;
+	private final IndexService indexService;
 
-    private final ApplicationEventPublisher publisher;
+	private final ApplicationEventPublisher publisher;
 
-    DefaultBlogPostSearchService(ApplicationEventPublisher publisher, IndexService indexService) {
-        this.indexService = indexService;
-        this.publisher = publisher;
-    }
+	DefaultBlogPostSearchService(ApplicationEventPublisher publisher, IndexService indexService) {
+		this.indexService = indexService;
+		this.publisher = publisher;
+	}
 
-    @EventListener(IndexingFinishedEvent.class)
-    public void refresh() {
-        log.info("caching the blogPost collection newest to oldest.");
-        var index = this.indexService.getIndex();
-        var blogs = index.values();
-        var results = blogs.stream() //
-                .sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed()) //
-                .toList();
-        synchronized (this.postsOrderedNewestToOldest) {
-            this.postsOrderedNewestToOldest.clear();
-            this.postsOrderedNewestToOldest.addAll(results);
-        }
-        publisher.publishEvent(new BlogPostsOrderedEvent(new ArrayList<>(this.postsOrderedNewestToOldest)));
-    }
+	@EventListener(IndexingFinishedEvent.class)
+	public void refresh() {
+		log.info("caching the blogPost collection newest to oldest.");
+		var index = this.indexService.getIndex();
+		var blogs = index.values();
+		var results = blogs.stream() //
+				.sorted(Comparator.comparingLong((ToLongFunction<BlogPost>) value -> value.date().getTime()).reversed()) //
+				.toList();
+		synchronized (this.postsOrderedNewestToOldest) {
+			this.postsOrderedNewestToOldest.clear();
+			this.postsOrderedNewestToOldest.addAll(results);
+		}
+		publisher.publishEvent(new BlogPostsOrderedEvent(new ArrayList<>(this.postsOrderedNewestToOldest)));
+	}
 
-    @Override
-    public BlogPostSearchResults recentBlogPosts(@Argument int offset, @Argument int pageSize) {
-        var all = this.postsOrderedNewestToOldest.stream().filter(BlogPost::listed).toList();
-        var end = Math.min((offset + pageSize), all.size());
-        var results = all.subList(offset, end);
-        log.info("recentBlogPosts (" + offset + "," + pageSize + "): " + results.size());
-        return new BlogPostSearchResults(all.size(), offset, pageSize, results);
-    }
+	@Override
+	public BlogPostSearchResults recentBlogPosts(@Argument int offset, @Argument int pageSize) {
+		var all = this.postsOrderedNewestToOldest.stream().filter(BlogPost::listed).toList();
+		var end = Math.min((offset + pageSize), all.size());
+		var results = all.subList(offset, end);
+		log.info("recentBlogPosts (" + offset + "," + pageSize + "): " + results.size());
+		return new BlogPostSearchResults(all.size(), offset, pageSize, results);
+	}
 
-    @Override
-    public BlogPostSearchResults search(@Argument String query, @Argument int offset, @Argument int pageSize) {
-        return this.indexService.search(query, offset, pageSize, true);
-    }
+	@Override
+	public BlogPostSearchResults search(@Argument String query, @Argument int offset, @Argument int pageSize) {
+		return this.indexService.search(query, offset, pageSize, true);
+	}
 
-    @Override
-    public BlogPost blogPostByPath(@Argument String path) {
-        var index = this.indexService.getIndex();
-        var nk = path.toLowerCase(Locale.ROOT);
-        var blogPosts = Stream//
-                .of(nk, "/" + nk, "/jl/blogPost/" + nk)//
-                .map(t -> t.toLowerCase(Locale.ROOT))//
-                .filter(index::containsKey)//
-                .map(index::get)//
-                .toList();
-        return blogPosts.size() > 0 ? blogPosts.get(0) : null;
-    }
+	@Override
+	public BlogPost blogPostByPath(@Argument String path) {
+		var index = this.indexService.getIndex();
+		var nk = path.toLowerCase(Locale.ROOT);
+		var blogPosts = Stream//
+				.of(nk, "/" + nk, "/jl/blogPost/" + nk)//
+				.map(t -> t.toLowerCase(Locale.ROOT))//
+				.filter(index::containsKey)//
+				.map(index::get)//
+				.toList();
+		return blogPosts.size() > 0 ? blogPosts.get(0) : null;
+	}
 
-    @Override
-    public List<BlogPost> getBlogPosts() {
-        return this.postsOrderedNewestToOldest;
-    }
+	@Override
+	public List<BlogPost> getBlogPosts() {
+		return this.postsOrderedNewestToOldest;
+	}
 
 }
