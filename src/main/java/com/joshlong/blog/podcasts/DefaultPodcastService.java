@@ -19,15 +19,11 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-/**
- *
- */
+
 @Log4j2
 class DefaultPodcastService implements PodcastService {
 
 	private final String rootUrl = "https://api.bootifulpodcast.fm";
-
-	// private final URL root = new URL("https://api.bootifulpodcast.fm");
 
 	private final URL uri = new URL(this.rootUrl + "/site/podcasts");
 
