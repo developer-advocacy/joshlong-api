@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.joshlong.blog.Podcast;
 import com.joshlong.blog.PodcastService;
 import com.joshlong.blog.SiteUpdatedEvent;
+import com.joshlong.blog.index.IndexingFinishedEvent;
 import com.joshlong.blog.utils.JsonUtils;
 import lombok.SneakyThrows;
 import lombok.extern.log4j.Log4j2;
@@ -47,11 +48,12 @@ class DefaultPodcastService implements PodcastService {
 		return StringUtils.hasText(url) ? new URL(url) : null;
 	}
 
-	@EventListener(SiteUpdatedEvent.class)
+//	@EventListener(SiteUpdatedEvent.class)
+	@EventListener(IndexingFinishedEvent.class)
 	public void refresh() throws IOException {
 		log.info("refreshing " + PodcastService.class.getName());
-		var response = objectMapper.readValue(this.uri, new TypeReference<Collection<JsonNode>>() {
-		});
+		var response = objectMapper.readValue(this.uri,
+				new TypeReference<Collection<JsonNode>>() {});
 		synchronized (this.monitor) {
 			this.podcasts.clear();
 			this.podcasts.addAll(response//

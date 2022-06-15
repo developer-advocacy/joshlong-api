@@ -4,16 +4,16 @@ This application is an API for the various functions of my blog. It is backed by
 
 ## Outstanding Things to do 
 
-* figure out how to configure the CORS hosts with properties 
+* figure out how to configure the CORS hosts with properties.
 * figure out how to configure the `/media` API host for the rewrite that happens in `MediaRestController`
 * figure out how to configure the Github Webhook for whenever the git repository is changed and the index needs to be rebuilt
-* figure out how 
-* pagination for the blog 
-* figure out monthly links or a dropdown so i can see all blogs from january 2012, or something like that?
+* figure out pagination for the blog.
+* figure out monthly links or a dropdown so I can see all blogs from january 2012, or something like that?
 
 ## Some Useful Queries for Debugging 
 
-If you want to examine what the GraphQL engine knows about your types, you might issue the following query, which will enumerate things like the types, their fields, and their fields' names. 
+If you want to examine what the GraphQL engine knows about your types, you might issue the following query, 
+which will enumerate things like the types, their fields, and their fields' names. 
 
 ``` 
 {
@@ -49,6 +49,9 @@ Make sure that [the `spring-tips/site-generator` Github Action has run](https://
 TODO: there should be a Github Action on the repository with `episodes.json` that in turn triggers a rebuild of joshlong.com. That might be seen as an uncooth coupling of concerns, however. Do I really want the Spring Tips Live services to be aware of their representation on JoshLong.com?  
 
 ### Not Seeing the Latest Bootiful Podcast episode? 
+
+
+
 
 ### Not Seeing the Latest Appearances? 
 
