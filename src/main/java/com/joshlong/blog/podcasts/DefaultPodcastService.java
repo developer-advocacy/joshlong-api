@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.joshlong.blog.Podcast;
 import com.joshlong.blog.PodcastService;
-import com.joshlong.blog.SiteUpdatedEvent;
 import com.joshlong.blog.index.IndexingFinishedEvent;
 import com.joshlong.blog.utils.JsonUtils;
 import lombok.SneakyThrows;
@@ -20,12 +19,17 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ *
+ */
 @Log4j2
 class DefaultPodcastService implements PodcastService {
 
-	private final URL root = new URL("https://api.bootifulpodcast.fm");
+	private final String rootUrl = "https://api.bootifulpodcast.fm";
 
-	private final URL uri = new URL(this.root + "/site/podcasts");
+	// private final URL root = new URL("https://api.bootifulpodcast.fm");
+
+	private final URL uri = new URL(this.rootUrl + "/site/podcasts");
 
 	private final Collection<Podcast> podcasts = new CopyOnWriteArrayList<>();
 
@@ -48,12 +52,11 @@ class DefaultPodcastService implements PodcastService {
 		return StringUtils.hasText(url) ? new URL(url) : null;
 	}
 
-//	@EventListener(SiteUpdatedEvent.class)
 	@EventListener(IndexingFinishedEvent.class)
 	public void refresh() throws IOException {
 		log.info("refreshing " + PodcastService.class.getName());
-		var response = objectMapper.readValue(this.uri,
-				new TypeReference<Collection<JsonNode>>() {});
+		var response = objectMapper.readValue(this.uri, new TypeReference<Collection<JsonNode>>() {
+		});
 		synchronized (this.monitor) {
 			this.podcasts.clear();
 			this.podcasts.addAll(response//
@@ -64,7 +67,7 @@ class DefaultPodcastService implements PodcastService {
 						var title = JsonUtils.valueOrNull(node, "title");
 						var date = new Date(node.get("date").longValue());
 						var episodePhotoUri = JsonUtils.valueOrNull(node, "episodePhotoUri", this::buildUrlFrom);
-						var episodeUri = JsonUtils.valueOrNull(node, "episodeUri", u -> buildUrlFrom(root + u));
+						var episodeUri = JsonUtils.valueOrNull(node, "episodeUri", u -> buildUrlFrom(this.rootUrl + u));
 						var description = JsonUtils.valueOrNull(node, "description");
 						return new Podcast(id, uid, title, date, episodePhotoUri, episodeUri, description);
 					})//
