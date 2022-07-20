@@ -19,7 +19,6 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-
 @Log4j2
 class DefaultPodcastService implements PodcastService {
 
