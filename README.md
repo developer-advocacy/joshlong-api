@@ -11,6 +11,7 @@ This application is an API for the various functions of my blog. It is backed by
 * figure out pagination for the blog.
 * figure out monthly links or a dropdown so I can see all blogs from january 2012, or something like that?
 
+
 ## Some Useful Queries for Debugging 
 
 If you want to examine what the GraphQL engine knows about your types, you might issue the following query, 
