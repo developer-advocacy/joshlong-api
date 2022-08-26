@@ -3,7 +3,7 @@
 
 This application is an API for the various functions of my blog. It is backed by a Git repository and provides a Lucene index. 
 
-## Outstanding Things to do 
+## Outstanding Things to Do 
 
 * figure out how to configure the CORS hosts with properties.
 * figure out how to configure the `/media` API host for the rewrite that happens in `MediaRestController`
