@@ -19,7 +19,6 @@
         <jgit.version>5.13.0.202109080827-r</jgit.version>
         <java.version>17</java.version>
         <jsch.version>0.1.54</jsch.version>
-<!--        <spring-cloud.version>2020.0.4</spring-cloud.version>-->
         <spring-cloud.version>2021.0.3</spring-cloud.version>
         <lucene.version>8.6.2</lucene.version>
         <jsoup.version>1.13.1</jsoup.version>
