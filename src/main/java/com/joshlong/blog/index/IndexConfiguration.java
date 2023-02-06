@@ -7,17 +7,39 @@ import com.joshlong.blog.dates.IsoDateFormat;
 import com.joshlong.blog.dates.SimpleDateDateFormat;
 import com.joshlong.lucene.LuceneTemplate;
 import lombok.extern.log4j.Log4j2;
+import org.eclipse.jgit.lib.CoreConfig;
+import org.springframework.aot.hint.MemberCategory;
+import org.springframework.aot.hint.RuntimeHints;
+import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.text.DateFormat;
+import java.util.Set;
 
 @Log4j2
 @Configuration
+@ImportRuntimeHints(IndexConfiguration.Hints.class)
 public class IndexConfiguration {
+
+	static class Hints implements RuntimeHintsRegistrar {
+
+		@Override
+		public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
+
+			hints.resources().registerResourceBundle("org.eclipse.jgit.internal.JGitText");
+
+			Set.of(CoreConfig.AutoCRLF.class, CoreConfig.CheckStat.class, CoreConfig.EOL.class,
+					CoreConfig.HideDotFiles.class, CoreConfig.EolStreamType.class, CoreConfig.LogRefUpdates.class,
+					CoreConfig.SymLinks.class, org.eclipse.jgit.internal.JGitText.class)
+					.forEach(clzz -> hints.reflection().registerType(clzz, MemberCategory.values()));
+		}
+
+	}
 
 	@Bean
 	public IndexService indexService(@SimpleDateDateFormat DateFormat simpleDateFormat,

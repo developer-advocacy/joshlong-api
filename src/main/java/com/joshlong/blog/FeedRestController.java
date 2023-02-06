@@ -20,7 +20,7 @@ import java.util.function.Function;
 /**
  * Produces an RSS feed of all the blogs
  */
-@Slf4j
+
 @Controller
 @ResponseBody
 @RequiredArgsConstructor
@@ -50,7 +50,7 @@ class FeedRestController {
 			var feed = this.feeds.buildFeed("rss_2.0", rss.title(), rss.link(), rss.description(), blogPosts);
 			var xml = this.feeds.render(feed);
 			this.renderedXml.set(xml);
-			log.info("built updated RSS feed ");
+
 		}
 
 	}
