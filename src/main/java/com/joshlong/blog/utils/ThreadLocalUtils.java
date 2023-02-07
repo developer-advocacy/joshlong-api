@@ -1,6 +1,6 @@
 package com.joshlong.blog.utils;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.springframework.aop.framework.ProxyFactory;
 
@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-@Log4j2
+@Slf4j
 public abstract class ThreadLocalUtils {
 
 	private static final Map<String, ThreadLocal<Object>> threadLocalMap = new ConcurrentHashMap<>();

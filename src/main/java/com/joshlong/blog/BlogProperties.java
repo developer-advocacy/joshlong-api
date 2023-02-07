@@ -1,12 +1,10 @@
 package com.joshlong.blog;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConstructorBinding;
 import org.springframework.core.io.Resource;
 
 import java.net.URI;
 
-@ConstructorBinding
 @ConfigurationProperties("blog")
 public record BlogProperties(URI gitRepository, //
 		Resource localCloneDirectory, //
@@ -17,5 +15,11 @@ public record BlogProperties(URI gitRepository, //
 		 * and configured as the payload of the webhook in github for the
 		 * joshlong.github.io-content repository
 		 */
-		String indexRebuildKey, String[] corsHosts, BlogRssFeed rss) {
+		String indexRebuildKey, //
+		String[] corsHosts, //
+		BlogRssFeed rss) {
+
+	public record BlogRssFeed(String title, String link, String description) {
+	}
+
 }

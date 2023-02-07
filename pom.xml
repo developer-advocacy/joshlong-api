@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.7.0</version>
+        <version>3.0.2</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.joshlong</groupId>
@@ -15,16 +15,10 @@
     <name>api</name>
     <description>API for the joshlong.com blog</description>
     <properties>
-        <repackage.classifier/>
         <jgit.version>5.13.0.202109080827-r</jgit.version>
-        <java.version>17</java.version>
         <jsch.version>0.1.54</jsch.version>
-        <spring-cloud.version>2021.0.3</spring-cloud.version>
-        <lucene.version>8.6.2</lucene.version>
         <jsoup.version>1.13.1</jsoup.version>
-        <spring-native.version>0.11.0</spring-native.version>
-        <artifactory-maven-plugin.version>3.2.3
-        </artifactory-maven-plugin.version>
+        <artifactory-maven-plugin.version>3.2.3  </artifactory-maven-plugin.version>
         <java.version>17</java.version>
     </properties>
     <dependencies>
@@ -41,40 +35,27 @@
         <dependency>
             <groupId>com.joshlong</groupId>
             <artifactId>template-spring-boot-starter</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>0.0.2</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <optional>true</optional>
         </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-queryparser</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-queries</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
+
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
             <version>${jsoup.version}</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-analyzers-icu</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.joshlong.lucene</groupId>
+            <groupId>com.joshlong</groupId>
             <artifactId>lucene-spring-boot-starter</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>0.0.1</version>
         </dependency>
         <dependency>
             <groupId>org.eclipse.jgit</groupId>
@@ -89,44 +70,39 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-graphql</artifactId>
-
         </dependency>
-      <!--  <dependency>
-            <groupId>org.springframework.experimental</groupId>
-            <artifactId>graphql-spring-boot-starter</artifactId>
-            <version>1.0.0-M4</version>
-        </dependency>-->
         <dependency>
             <groupId>io.projectreactor</groupId>
             <artifactId>reactor-test</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>com.rometools</groupId>
             <artifactId>rome</artifactId>
             <version>1.18.0</version>
         </dependency>
-
-
+        <dependency>
+            <groupId>com.joshlong</groupId>
+            <artifactId>hints</artifactId>
+            <version>0.0.4</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
         </dependency>
-
     </dependencies>
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+    <!--  <dependencyManagement>
+          <dependencies>
+              <dependency>
+                  <groupId>org.springframework.cloud</groupId>
+                  <artifactId>spring-cloud-dependencies</artifactId>
+                  <version>${spring-cloud.version}</version>
+                  <type>pom</type>
+                  <scope>import</scope>
+              </dependency>
+          </dependencies>
+      </dependencyManagement>-->
 
     <build>
         <plugins>
@@ -134,6 +110,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </exclude>
+                    </excludes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jfrog.buildinfo</groupId>
@@ -237,7 +221,6 @@
             </url>
         </pluginRepository>
     </pluginRepositories>
-
 
 
 </project>

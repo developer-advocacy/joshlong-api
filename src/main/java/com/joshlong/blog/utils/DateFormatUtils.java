@@ -1,6 +1,6 @@
 package com.joshlong.blog.utils;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
@@ -8,28 +8,14 @@ import java.util.TimeZone;
 /**
  * Dates. What even. Ammirite?
  */
-@Log4j2 // todo why does graalvm compilation of these beans result in so many danged
-// instances?
-// target/generated-sources/spring-aot/src/main/resources/com/joshlong/blog/utils/DateFormatUtils$SiteSimpleDateFormat$$SpringProxy$26a091dc$aux$2.class,
-// and a zillion others just like it.
-
+@Slf4j
 public abstract class DateFormatUtils {
 
 	public static SimpleDateFormat getThreadsafeIsoDateTimeDateFormat() {
-		/*
-		 * return ThreadLocalUtils.buildThreadLocalObject("isoDateTimeDateFormat",
-		 * DateFormatUtils.SiteSimpleDateFormat.class, () ->
-		 * (DateFormatUtils.SiteSimpleDateFormat) getIsoDateTimeDateFormat());
-		 */
 		return getIsoDateTimeDateFormat();
 	}
 
 	public static SimpleDateFormat getThreadSafeSimpleDateDateFormat() {
-		/*
-		 * return ThreadLocalUtils.buildThreadLocalObject("simpleDateDateFormat",
-		 * DateFormatUtils.SiteSimpleDateFormat.class, () ->
-		 * (DateFormatUtils.SiteSimpleDateFormat) getSimpleDateDateFormat());
-		 */
 		return getSimpleDateDateFormat();
 	}
 

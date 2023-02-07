@@ -7,7 +7,6 @@ import com.joshlong.blog.Appearance;
 import com.joshlong.blog.AppearanceService;
 import com.joshlong.blog.index.IndexingFinishedEvent;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.util.StringUtils;
 
@@ -20,7 +19,6 @@ import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.ToLongFunction;
 
-@Slf4j
 class DefaultAppearanceService implements AppearanceService {
 
 	private final Collection<Appearance> appearances = new CopyOnWriteArrayList<>();
@@ -72,11 +70,6 @@ class DefaultAppearanceService implements AppearanceService {
 
 	@SneakyThrows
 	private Appearance buildAppearanceFrom(JsonNode json) {
-
-		if (log.isDebugEnabled())
-			log.debug("the json node title is " + json.get("event") + " and the date were converting is "
-					+ json.get("start_date"));
-
 		var startDate = json.get("start_date");
 		var endDate = json.get("end_date");
 		var time = json.get("time");

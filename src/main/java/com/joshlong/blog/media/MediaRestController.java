@@ -1,6 +1,6 @@
 package com.joshlong.blog.media;
 
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -16,7 +16,7 @@ import java.io.File;
 /**
  * Serves media from the Github clone
  */
-@Log4j2
+@Slf4j
 @Controller
 @ResponseBody
 class MediaRestController {
