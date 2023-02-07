@@ -6,7 +6,7 @@ import com.joshlong.blog.IndexService;
 import com.joshlong.blog.dates.IsoDateFormat;
 import com.joshlong.blog.dates.SimpleDateDateFormat;
 import com.joshlong.lucene.LuceneTemplate;
-import lombok.extern.log4j.Log4j2;
+import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.lib.CoreConfig;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 import java.text.DateFormat;
 import java.util.Set;
 
-@Log4j2
+@Slf4j
 @Configuration
 @ImportRuntimeHints(IndexConfiguration.Hints.class)
 public class IndexConfiguration {

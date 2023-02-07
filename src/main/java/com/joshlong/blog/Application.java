@@ -48,8 +48,9 @@ public class Application {
 		public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
 			var values = MemberCategory.values();
 
-			Set.of(Podcast.class, BlogPostContentType.class, IndexRebuildStatus.class, Content.class, BlogPost.class,
-					Appearance.class, SpringTipsEpisode.class).forEach(c -> hints.reflection().registerType(c, values));
+			Set.of(Podcast.class, BlogPostsOrderedEvent.class, BlogPostContentType.class, IndexRebuildStatus.class,
+					Content.class, BlogPost.class, Appearance.class, SpringTipsEpisode.class)
+					.forEach(c -> hints.reflection().registerType(c, values));
 
 			// todo see if i can drop these and have things still work?
 			Set.of("graphql/schema.graphqls", "graphiql/index.html")

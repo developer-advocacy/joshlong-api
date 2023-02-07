@@ -21,6 +21,7 @@ import java.util.function.Function;
  * Produces an RSS feed of all the blogs
  */
 
+@Slf4j
 @Controller
 @ResponseBody
 @RequiredArgsConstructor
@@ -36,6 +37,7 @@ class FeedRestController {
 
 	@EventListener
 	public void blogPostsUpdatedEvent(BlogPostsOrderedEvent updatedEvent) throws Exception {
+		log.info("recieved " + updatedEvent.toString());
 		reset(updatedEvent.getSource());
 	}
 
