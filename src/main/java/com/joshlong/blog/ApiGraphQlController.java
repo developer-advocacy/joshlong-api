@@ -59,11 +59,6 @@ class ApiGraphQlController {
 	}
 
 	@QueryMapping
-	Collection<Appearance> appearances() {
-		return this.appearanceService.getAppearances();
-	}
-
-	@QueryMapping
 	BlogPostSearchResults search(@Argument String query, @Argument int offset, @Argument int pageSize) {
 		return this.blogPostSearchService.search(query, offset, pageSize);
 	}
@@ -76,6 +71,11 @@ class ApiGraphQlController {
 	@QueryMapping
 	BlogPost blogPostByPath(@Argument String path) {
 		return blogPostSearchService.blogPostByPath(path);
+	}
+
+	@QueryMapping
+	Collection<Appearance> appearances() {
+		return this.appearanceService.getAppearances();
 	}
 
 	@QueryMapping

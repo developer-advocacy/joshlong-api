@@ -1,7 +1,10 @@
 package com.joshlong.blog.content;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.joshlong.blog.*;
+import com.joshlong.blog.BlogPost;
+import com.joshlong.blog.BlogProperties;
+import com.joshlong.blog.ContentService;
+import com.joshlong.blog.IndexService;
 import com.joshlong.blog.index.IndexingFinishedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
@@ -12,11 +15,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 import java.io.File;
-import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
+@Slf4j
 @Configuration
 class ContentConfiguration {
 
@@ -37,23 +40,24 @@ class ContentConfiguration {
 	}
 
 	@Bean
-	ContentService<String> abstractsContentService() throws Exception {
+	ContentService<String> abstractsContentService() {
 		return new HtmlPassthroughContentService(
 				() -> indexService.getIndex().get("/abstracts.html").processedContent());
 	}
 
 	@Bean
-	ContentService<Collection<Content>> booksContentService() throws Exception {
+	JsonContentService booksContentService() throws Exception {
 		return this.buildContentService("books.json");
 	}
 
 	@Bean
-	ContentService<Collection<Content>> livelessonsContentService() throws Exception {
+	JsonContentService livelessonsContentService() throws Exception {
 		return this.buildContentService("livelessons.json");
 	}
 
-	private ContentService<Collection<Content>> buildContentService(String fn) throws Exception {
+	private JsonContentService buildContentService(String fn) throws Exception {
 		var file = new File(this.properties.localCloneDirectory().getFile(), "content/" + fn);
+		log.info("the file is " + file.getAbsolutePath() + " and it exists? " + (file.exists()));
 		var fileResource = new FileSystemResource(file);
 		return new JsonContentService(fileResource, this.resolver, this.objectMapper);
 	}
@@ -74,7 +78,8 @@ class BlogIndexContentResolver implements Function<String, String> {
 		var posts = event.getSource();
 		var index = posts.index();
 		this.reference.set(index);
-		index.forEach((k, v) -> log.info(k + "=" + v.path()));
+		if (log.isDebugEnabled())
+			index.forEach((k, v) -> log.debug(k + "=" + v.path()));
 	}
 
 	@Override

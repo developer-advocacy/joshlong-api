@@ -1,5 +1,6 @@
 package com.joshlong.blog;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
@@ -9,14 +10,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportRuntimeHints;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.function.client.WebClient;
 
+import java.awt.print.Book;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -48,21 +48,10 @@ public class Application {
 		@Override
 		public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
 			var values = MemberCategory.values();
-			Set.of(Date.class,
-
-					// todo why did this hint below for the config props make a
-					// difference??
-					BlogProperties.BlogRssFeed.class,
-					// todo why did this hint above for the config props make a
-					// difference??
-					Podcast.class, BlogPostsOrderedEvent.class, BlogPostContentType.class, IndexRebuildStatus.class,
-					Content.class, BlogPost.class, Appearance.class, SpringTipsEpisode.class)
+			Set.of(BlogProperties.BlogRssFeed.class, Book.class, Appearance.class, Podcast.class,
+					BlogPostsOrderedEvent.class, BlogPostContentType.class, IndexRebuildStatus.class, Content.class,
+					BlogPost.class, JsonNode.class, SpringTipsEpisode.class)
 					.forEach(c -> hints.reflection().registerType(c, values));
-
-			// todo see if i can drop these and have things still work?
-			Set.of("graphql/schema.graphqls", "graphiql/index.html")
-					.forEach(r -> hints.resources().registerResource(new ClassPathResource(r)));
-
 		}
 
 	}

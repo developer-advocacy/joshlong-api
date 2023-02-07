@@ -51,7 +51,6 @@ class JsonContentService implements ContentService<Collection<Content>> {
 
 	@EventListener(IndexingFinishedEvent.class)
 	public void indexed() throws Exception {
-		log.info("building " + getClass().getName() + " for file " + this.resource.getFile().getAbsolutePath() + '.');
 		var file = this.resource.getFile();
 		var values = this.objectMapper.readValue(file, new TypeReference<Collection<JsonNode>>() {
 		});
