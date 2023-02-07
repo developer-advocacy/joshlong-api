@@ -1,4 +1,22 @@
-apiVersion: networking.k8s.io/v1beta1
+#apiVersion: networking.k8s.io/v1beta1
+#kind: Ingress
+#metadata:
+#  annotations:
+#    ingress.kubernetes.io/force-ssl-redirect: "true"
+#    networking.gke.io/managed-certificates: "api-certificate"
+#    kubernetes.io/ingress.global-static-ip-name: "joshlong-com-api-ip"
+#  name: api-ingress
+#spec:
+#  rules:
+#    - host: api.joshlong.com
+#      http:
+#        paths:
+#          - backend:
+#              serviceName: api
+#              servicePort: 80
+
+
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   annotations:
@@ -7,10 +25,8 @@ metadata:
     kubernetes.io/ingress.global-static-ip-name: "joshlong-com-api-ip"
   name: api-ingress
 spec:
-  rules:
-    - host: api.joshlong.com
-      http:
-        paths:
-          - backend:
-              serviceName: api
-              servicePort: 80
+  defaultBackend:
+    service:
+      name: api
+      port:
+        number: 80
