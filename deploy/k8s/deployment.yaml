@@ -18,6 +18,28 @@ spec:
         - image: gcr.io/bootiful/joshlong-com-api
           imagePullPolicy: Always
           name: api
+
+          startupProbe:
+            failureThreshold: 120
+            periodSeconds: 120
+            httpGet:
+              port: 8080
+              path: /actuator/health/readiness
+
+          readinessProbe:
+            failureThreshold: 120
+            periodSeconds: 120
+            httpGet:
+              port: 8080
+              path: /actuator/health/readiness
+
+          livenessProbe:
+            failureThreshold: 120
+            periodSeconds: 120
+            httpGet:
+              port: 8080
+              path: /actuator/health/liveness
+
           env:
             - name: BLOG_INDEX_REBUILD_KEY
               valueFrom:
@@ -30,14 +52,7 @@ spec:
               value: "https://api.joshlong.com"
             - name: LANG
               value: "en_US.UTF-8"
-          readinessProbe:
-            httpGet:
-              port: 8080
-              path: /actuator/health/readiness
-          livenessProbe:
-            httpGet:
-              port: 8080
-              path: /actuator/health/liveness
+
           ports:
             - containerPort: 8080
           resources:
