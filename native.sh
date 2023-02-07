@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
- mvn -DskipTests -Pnative  spring-javaformat:apply clean  native:compile
+mvn -DskipTests -Pnative  spring-javaformat:apply clean  native:compile && ./target/api

@@ -16,6 +16,7 @@ import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -47,8 +48,14 @@ public class Application {
 		@Override
 		public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
 			var values = MemberCategory.values();
+			Set.of(Date.class,
 
-			Set.of(Podcast.class, BlogPostsOrderedEvent.class, BlogPostContentType.class, IndexRebuildStatus.class,
+					// todo why did this hint below for the config props make a
+					// difference??
+					BlogProperties.BlogRssFeed.class,
+					// todo why did this hint above for the config props make a
+					// difference??
+					Podcast.class, BlogPostsOrderedEvent.class, BlogPostContentType.class, IndexRebuildStatus.class,
 					Content.class, BlogPost.class, Appearance.class, SpringTipsEpisode.class)
 					.forEach(c -> hints.reflection().registerType(c, values));
 

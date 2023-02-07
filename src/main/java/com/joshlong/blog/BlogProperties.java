@@ -15,5 +15,11 @@ public record BlogProperties(URI gitRepository, //
 		 * and configured as the payload of the webhook in github for the
 		 * joshlong.github.io-content repository
 		 */
-		String indexRebuildKey, String[] corsHosts, BlogRssFeed rss) {
+		String indexRebuildKey, //
+		String[] corsHosts, //
+		BlogRssFeed rss) {
+
+	public record BlogRssFeed(String title, String link, String description) {
+	}
+
 }
