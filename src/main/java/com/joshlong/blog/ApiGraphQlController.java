@@ -30,11 +30,14 @@ class ApiGraphQlController {
 
 	private final ContentService<String> abstractsContentService;
 
+	private final ContentService<String> aboutContentService;
+
 	private final ContentService<Collection<Content>> booksContentService;
 
 	private final ContentService<Collection<Content>> livelessonsContentService;
 
-	ApiGraphQlController(@Qualifier("abstractsContentService") ContentService<String> abstractsContentService, //
+	ApiGraphQlController(@Qualifier("aboutContentService") ContentService<String> aboutContentService, //
+			@Qualifier("abstractsContentService") ContentService<String> abstractsContentService, //
 			@Qualifier("booksContentService") ContentService<Collection<Content>> booksContentService, //
 			@Qualifier("livelessonsContentService") ContentService<Collection<Content>> livelessonsContentService, //
 			SpringTipsService springTipsService, //
@@ -45,6 +48,7 @@ class ApiGraphQlController {
 	) {
 		this.blogPostSearchService = blogPostSearchService;
 		this.appearanceService = appearanceService;
+		this.aboutContentService = aboutContentService;
 		this.podcastService = podcastService;
 		this.isoDateFormat = isoDateFormat;
 		this.abstractsContentService = abstractsContentService;
@@ -56,6 +60,11 @@ class ApiGraphQlController {
 	@QueryMapping
 	String abstracts() {
 		return this.abstractsContentService.getContent();
+	}
+
+	@QueryMapping
+	String about() {
+		return this.aboutContentService.getContent();
 	}
 
 	@QueryMapping

@@ -1,11 +1,9 @@
 type Query {
-
-
     blogPosts: [BlogPost]
     search(query: String , offset: Int, pageSize: Int) : BlogPostSearchResults
     recentBlogPosts(offset: Int, pageSize: Int) : BlogPostSearchResults
     blogPostByPath (path: String) : BlogPost
-
+    about: String
     abstracts: String
     appearances : [Appearance]
     podcasts : [Podcast]

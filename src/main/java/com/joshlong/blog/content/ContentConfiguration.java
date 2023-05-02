@@ -40,6 +40,11 @@ class ContentConfiguration {
 	}
 
 	@Bean
+	ContentService<String> aboutContentService() {
+		return new HtmlPassthroughContentService(() -> indexService.getIndex().get("/about.html").processedContent());
+	}
+
+	@Bean
 	ContentService<String> abstractsContentService() {
 		return new HtmlPassthroughContentService(
 				() -> indexService.getIndex().get("/abstracts.html").processedContent());
