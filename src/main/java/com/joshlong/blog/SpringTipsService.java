@@ -1,11 +1,13 @@
 package com.joshlong.blog;
 
-import java.util.Collection;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+
 
 public interface SpringTipsService {
 
-	SpringTipsEpisode getLatestSpringTipsEpisode();
+	Mono<SpringTipsEpisode> getLatestSpringTipsEpisode();
 
-	Collection<SpringTipsEpisode> getSpringTipsEpisodes();
+	Flux<SpringTipsEpisode> getSpringTipsEpisodes();
 
 }

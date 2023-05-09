@@ -1,17 +1,34 @@
 package com.joshlong.blog.podcasts;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.joshlong.blog.BlogProperties;
+import com.joshlong.blog.PodcastService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 
+@Slf4j
 @Configuration
 class PodcastConfiguration {
 
-	@Bean
-	DefaultPodcastService defaultPodcastService(ObjectMapper om) throws IOException {
-		return new DefaultPodcastService(om);
-	}
+    private final String podcastServiceName = PodcastService.class.getName();
+
+    @Bean
+    @Profile("offline")
+    PodcastService offlineDefaultPodcastService() {
+        log.info("{} offline", this.podcastServiceName);
+        return ArrayList::new;
+    }
+
+    @Bean
+    @Profile("!offline")
+    DefaultPodcastService defaultPodcastService(BlogProperties properties, ObjectMapper om) throws IOException {
+        log.info("{} online", this.podcastServiceName);
+        return new DefaultPodcastService(properties, om);
+    }
 
 }

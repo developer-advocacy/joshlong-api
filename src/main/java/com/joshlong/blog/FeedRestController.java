@@ -58,9 +58,7 @@ class FeedRestController {
 			var feed = this.feeds.buildFeed("rss_2.0", rss.title(), rss.link(), rss.description(), blogPosts);
 			var xml = this.feeds.render(feed);
 			this.renderedXml.set(xml);
-
 		}
-
 	}
 
 	@GetMapping(value = "/feed.xml", produces = MediaType.APPLICATION_RSS_XML_VALUE)
