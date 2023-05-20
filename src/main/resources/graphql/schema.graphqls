@@ -1,4 +1,7 @@
 type Query {
+    springtipsVideos : [Video]
+    coffeesoftwareVideos : [Video]
+
     blogPosts: [BlogPost]
     search(query: String , offset: Int, pageSize: Int) : BlogPostSearchResults
     recentBlogPosts(offset: Int, pageSize: Int) : BlogPostSearchResults
@@ -21,12 +24,10 @@ type BlogPostSearchResults {
 }
 
 type SpringTipsEpisode {
-    blogUrl : String
-    date : String
-    seasonNumber : Int
-    title : String
-    youtubeEmbedUrl : String
-    youtubeId : String
+    published: String
+    thumbnail: String
+    title: String
+    youtubeId: String
 }
 
 type Content {
@@ -72,6 +73,16 @@ enum BlogPostContentType {
     MD
 } 
 
+type Playlist {
+    id: ID
+}
+
+type Video {
+    id: ID
+    thumbnail: String
+    title : String
+    published : String
+}
 
 type Appearance {
     event : String

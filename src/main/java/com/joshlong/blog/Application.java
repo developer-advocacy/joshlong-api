@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportRuntimeHints;
+import org.springframework.graphql.client.HttpGraphQlClient;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
@@ -54,6 +55,11 @@ public class Application {
 					.forEach(c -> hints.reflection().registerType(c, values));
 		}
 
+	}
+
+	@Bean
+	HttpGraphQlClient youtubeHttpGraphqlClient(BlogProperties properties) {
+		return HttpGraphQlClient.builder().url(properties.youtubeApiServerUri() + "/graphql").build();
 	}
 
 	@Bean

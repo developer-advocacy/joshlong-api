@@ -1,13 +1,6 @@
 package com.joshlong.blog;
 
-import java.net.URI;
-import java.util.Date;
+import java.net.URL;
 
-/***
- * wraps the data coming <a href="https://springtipslive.io/episodes.json">from the
- * episode feed</a>
- *
- */
-public record SpringTipsEpisode(URI blogUrl, Date date, int seasonNumber, String title, URI youtubeEmbedUrl,
-		String youtubeId) {
+public record SpringTipsEpisode(String published, URL thumbnail, String title, String youtubeId) {
 }

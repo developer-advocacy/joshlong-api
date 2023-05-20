@@ -17,6 +17,8 @@ touch $SECRETS_FN
 echo writing to "$SECRETS_FN "
 cat <<EOF >${SECRETS_FN}
 BLOG_INDEX_REBUILD_KEY=${BLOG_INDEX_REBUILD_KEY}
+YOUTUBE_API_SERVER_URI=https://youtube.joshlong.com
+BOOTIFUL_PODCAST_API_SERVER_URI=https://api.bootifulpodcast.fm
 EOF
 kubectl delete secrets $SECRETS || echo "no secrets to delete."
 kubectl create secret generic $SECRETS --from-env-file $SECRETS_FN
