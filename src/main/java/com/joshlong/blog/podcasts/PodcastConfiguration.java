@@ -15,20 +15,12 @@ import java.util.ArrayList;
 @Configuration
 class PodcastConfiguration {
 
-    private final String podcastServiceName = PodcastService.class.getName();
+	private final String podcastServiceName = PodcastService.class.getName();
 
-    @Bean
-    @Profile("offline")
-    PodcastService offlineDefaultPodcastService() {
-        log.info("{} offline", this.podcastServiceName);
-        return ArrayList::new;
-    }
-
-    @Bean
-    @Profile("!offline")
-    DefaultPodcastService defaultPodcastService(BlogProperties properties, ObjectMapper om) throws IOException {
-        log.info("{} online", this.podcastServiceName);
-        return new DefaultPodcastService(properties, om);
-    }
+	@Bean
+	DefaultPodcastService defaultPodcastService(BlogProperties properties, ObjectMapper om) throws IOException {
+		log.info("{} online", this.podcastServiceName);
+		return new DefaultPodcastService(properties, om);
+	}
 
 }

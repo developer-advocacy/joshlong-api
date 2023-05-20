@@ -59,11 +59,8 @@ public class Application {
 
 	@Bean
 	HttpGraphQlClient youtubeHttpGraphqlClient(BlogProperties properties) {
-		return HttpGraphQlClient.builder()
-				.url(properties.youtubeApiServerUri() + "/graphql")
-				.build();
+		return HttpGraphQlClient.builder().url(properties.youtubeApiServerUri() + "/graphql").build();
 	}
-
 
 	@Bean
 	WebClient webClient(WebClient.Builder builder) {
