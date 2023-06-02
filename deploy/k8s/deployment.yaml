@@ -40,12 +40,11 @@ spec:
               port: 8080
               path: /actuator/health/liveness
 
+          envFrom:
+            - secretRef:
+                name: joshlong-youtube-api-secrets
+
           env:
-            - name: BLOG_INDEX_REBUILD_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: joshlong-api-secrets
-                  key: BLOG_INDEX_REBUILD_KEY
             - name: BLOG_RESET_ON_REBUILD
               value: "true"
             - name: BLOG_API_SERVER_URI
