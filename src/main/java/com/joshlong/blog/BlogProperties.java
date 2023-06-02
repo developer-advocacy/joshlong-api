@@ -10,7 +10,6 @@ public record BlogProperties(URI gitRepository, //
 		Resource localCloneDirectory, //
 		boolean resetOnRebuild, //
 		String apiServerUri, //
-		String youtubeApiServerUri, //
 		String bootifulPodcastApiServerUri, //
 		/*
 		 * this key is stored in my lastpass. it's an environment variable for this app
