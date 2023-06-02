@@ -1,0 +1,31 @@
+
+type Channel {
+    id: ID
+}
+
+
+
+type Video {
+    id: ID
+    thumbnail: String
+    title : String
+    description: String
+    published : String
+    views : Int
+    favorites :Int
+    comments : Int
+    likes:  Int
+    tags : [String]
+}
+
+
+
+
+
+
+
+
+type Playlist {
+    id: ID
+}
+

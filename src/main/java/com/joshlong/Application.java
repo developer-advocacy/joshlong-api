@@ -1,47 +1,44 @@
-package com.joshlong.blog;
+package com.joshlong;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.joshlong.blog.*;
+import com.joshlong.videos.JobProperties;
+import com.joshlong.videos.youtube.IngestJobInitiatedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
+import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportRuntimeHints;
-import org.springframework.graphql.client.HttpGraphQlClient;
 import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.awt.print.Book;
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.stream.Stream;
 
-/**
- * This the GraphQL API for the new joshlong.com. Most o the endpoints are GraphQ the
- * exception of a few endpoints intended to simplify integration, like one for Github's
- * webhooks.
- * <p>
- * It listens for webhooks from Github to know when to download and re-index the html
- * pages with a Spring Batch job.
- * <p>
- * It supports searching the blog posts with an in-memory Lucene index.
- *
- * @author <a href="mailto:josh@joshlong.com">Josh Long</a>
- */
-
 @Slf4j
 @SpringBootApplication
 @ImportRuntimeHints(Application.Hints.class)
-@EnableConfigurationProperties(BlogProperties.class)
+@EnableConfigurationProperties({ JobProperties.class, BlogProperties.class })
 public class Application {
 
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
+	}
+
+	@Bean
+	ApplicationRunner ingestJobInitiationEventListener(ApplicationEventPublisher publisher) {
+		return e -> publisher.publishEvent(new IngestJobInitiatedEvent(Instant.now()));
 	}
 
 	static class Hints implements RuntimeHintsRegistrar {
@@ -51,15 +48,9 @@ public class Application {
 			var values = MemberCategory.values();
 			Set.of(BlogProperties.BlogRssFeed.class, Book.class, Appearance.class, Podcast.class,
 					BlogPostsOrderedEvent.class, BlogPostContentType.class, IndexRebuildStatus.class, Content.class,
-					BlogPost.class, JsonNode.class, SpringTipsEpisode.class)
-					.forEach(c -> hints.reflection().registerType(c, values));
+					BlogPost.class, JsonNode.class).forEach(c -> hints.reflection().registerType(c, values));
 		}
 
-	}
-
-	@Bean
-	HttpGraphQlClient youtubeHttpGraphqlClient(BlogProperties properties) {
-		return HttpGraphQlClient.builder().url(properties.youtubeApiServerUri() + "/graphql").build();
 	}
 
 	@Bean

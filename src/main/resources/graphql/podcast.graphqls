@@ -1,0 +1,9 @@
+type Podcast {
+    id: ID
+    uid: ID
+    title: String
+    date: String
+    episodePhotoUri: String
+    episodeUri: String
+    description: String
+}

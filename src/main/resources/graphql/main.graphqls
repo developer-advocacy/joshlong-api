@@ -1,0 +1,18 @@
+type Query {
+    channels: [Channel]
+    playlistsByName (name :String): [Playlist]
+    videosByPlaylist(playlistId:ID) :[Video]
+    videosByChannel(channelId:ID): [Video]
+    springtipsVideos : [Video]
+    coffeesoftwareVideos : [Video]
+    blogPosts: [BlogPost]
+    search(query: String , offset: Int, pageSize: Int) : BlogPostSearchResults
+    recentBlogPosts(offset: Int, pageSize: Int) : BlogPostSearchResults
+    blogPostByPath (path: String) : BlogPost
+    about: String
+    abstracts: String
+    appearances : [Appearance]
+    podcasts : [Podcast]
+    books: [Content]
+    livelessons: [Content]
+}

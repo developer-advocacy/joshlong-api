@@ -1,0 +1,52 @@
+
+
+type BlogPostSearchResults {
+    totalResultsSize : Int
+    offset : Int
+    pageSize : Int
+    posts : [BlogPost ]
+}
+type Content {
+    title: String
+    imageUrl: String
+    html: String
+}
+
+type IndexRebuildStatus  {
+    entries : Int
+    date : String
+}
+
+
+
+type BlogPost {
+    title: String
+    date : String
+    published: Boolean
+    originalContent : String
+    processedContent: String
+    type: BlogPostContentType
+    path : String
+    pathId: String
+    images : [String]
+    paragraphs: [String]
+    heroParagraphs : String
+    heroImage  : String
+    heroParagraphsTruncated: Boolean
+}
+
+enum BlogPostContentType {
+    HTML
+    MD
+} 
+
+
+
+type Appearance {
+    event : String
+    startDate : String
+    endDate : String
+    time : String
+    marketingBlurb: String
+}
+

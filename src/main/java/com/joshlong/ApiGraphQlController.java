@@ -1,16 +1,14 @@
-package com.joshlong.blog;
+package com.joshlong;
 
+import com.joshlong.blog.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.graphql.client.GraphQlClient;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.Assert;
-import reactor.core.publisher.Flux;
 
-import java.net.URL;
 import java.text.DateFormat;
 import java.util.Collection;
 
@@ -37,19 +35,16 @@ class ApiGraphQlController {
 
 	private final ContentService<Collection<Content>> livelessonsContentService;
 
-	private final GraphQlClient gc;
-
 	ApiGraphQlController(@Qualifier("aboutContentService") ContentService<String> aboutContentService, //
 			@Qualifier("abstractsContentService") ContentService<String> abstractsContentService, //
 			@Qualifier("booksContentService") ContentService<Collection<Content>> booksContentService, //
 			@Qualifier("livelessonsContentService") ContentService<Collection<Content>> livelessonsContentService, //
 
-			GraphQlClient gc, BlogPostSearchService blogPostSearchService, //
+			BlogPostSearchService blogPostSearchService, //
 			AppearanceService appearanceService, //
 			PodcastService podcastService, //
-			DateFormat isoDateFormat//
-	) {
-		this.gc = gc;
+			DateFormat isoDateFormat) {
+
 		this.blogPostSearchService = blogPostSearchService;
 		this.appearanceService = appearanceService;
 		this.aboutContentService = aboutContentService;
@@ -58,7 +53,6 @@ class ApiGraphQlController {
 		this.abstractsContentService = abstractsContentService;
 		this.booksContentService = booksContentService;
 		this.livelessonsContentService = livelessonsContentService;
-
 	}
 
 	@QueryMapping
@@ -138,31 +132,4 @@ class ApiGraphQlController {
 		return String.join(" ", post.paragraphs());
 	}
 
-	@QueryMapping
-	Flux<Video> springtipsVideos() {
-		return videos(this.gc, "springtipsVideos");
-	}
-
-	@QueryMapping
-	Flux<Video> coffeesoftwareVideos() {
-		return videos(this.gc, "coffeesoftwareVideos");
-	}
-
-	private static Flux<Video> videos(GraphQlClient graphQlClient, String field) {
-
-		var gql = String.format("""
-				query {
-				 %s {
-				  id, published, thumbnail, title
-				 }
-				}
-				""", field);
-		return graphQlClient//
-				.document(gql)//
-				.retrieve(field).toEntityList(Video.class).flatMapMany(Flux::fromIterable);
-	}
-
-}
-
-record Video(String published, URL thumbnail, String id, String title) {
 }
