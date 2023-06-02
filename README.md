@@ -91,18 +91,7 @@ Alternatively, ive supplied a `docker-compose.yaml` file: `docker compose up`
 
 ### You'll Need an API Key
 
-Follow the steps below to create an API Key.
-
-* Go to the [Google Developer Console](https://console.cloud.google.com/).
-* Create a new project. You can also select the existing project.
-* Type the name of your project. Google Console will create the unique project ID.
-* After creating a project, it will appear on top of the left sidebar.
-* Click on Library. You will see a list of Google APIs.
-* Search for YouTube Data API and enable it.
-* Click on the Credentials. Select the API key under Create credentials.
-* Copy the API key. We will require it in the next step.
-
-Neww steps: Go to APIs & Services, find Youtube Data API. Enable it. Create a new Credential. Choose the one that results not in an OAuth client but an API key. 
+Follow the steps below to create an API Key. Go to Google Cloud Console, then to the APIs & Services section, find Youtube Data API. Enable it. Create a new Credential. Choose the one that results _not_ in an OAuth client but an API key. 
 
 
 ## To Do
