@@ -20,22 +20,22 @@ spec:
           name: joshlong-api
 
           startupProbe:
-            failureThreshold: 120
-            periodSeconds: 120
+            failureThreshold: 240
+            periodSeconds: 240
             httpGet:
               port: 8080
               path: /actuator/health/readiness
 
           readinessProbe:
-            failureThreshold: 120
-            periodSeconds: 120
+            failureThreshold: 240
+            periodSeconds: 240
             httpGet:
               port: 8080
               path: /actuator/health/readiness
 
           livenessProbe:
-            failureThreshold: 120
-            periodSeconds: 120
+            failureThreshold: 240
+            periodSeconds: 240
             httpGet:
               port: 8080
               path: /actuator/health/liveness
