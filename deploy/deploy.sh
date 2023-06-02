@@ -2,7 +2,7 @@
 set -e
 set -o pipefail
 
-export APP_NAME=joshlong-com-api
+export APP_NAME=joshlong-api
 export SECRETS=${APP_NAME}-secrets
 export SECRETS_FN=$HOME/${SECRETS}
 export IMAGE_NAME=gcr.io/${GCLOUD_PROJECT}/${APP_NAME}
