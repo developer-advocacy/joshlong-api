@@ -2,22 +2,22 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: api
-  name: api
+    app: joshlong-api
+  name: joshlong-api
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: api
+      app: joshlong-api
   template:
     metadata:
       labels:
-        app: api
+        app: joshlong-api
     spec:
       containers:
-        - image: gcr.io/bootiful/joshlong-com-api
+        - image: gcr.io/pgtm-jlong/joshlong-api
           imagePullPolicy: Always
-          name: api
+          name: joshlong-api
 
           startupProbe:
             failureThreshold: 120
@@ -44,7 +44,7 @@ spec:
             - name: BLOG_INDEX_REBUILD_KEY
               valueFrom:
                 secretKeyRef:
-                  name: joshlong-com-api-secrets
+                  name: joshlong-api-secrets
                   key: BLOG_INDEX_REBUILD_KEY
             - name: BLOG_RESET_ON_REBUILD
               value: "true"
