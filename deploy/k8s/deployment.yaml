@@ -42,7 +42,7 @@ spec:
 
           envFrom:
             - secretRef:
-                name: joshlong-youtube-api-secrets
+                name: joshlong-api-secrets
 
           env:
             - name: BLOG_RESET_ON_REBUILD
