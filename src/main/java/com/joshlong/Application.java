@@ -1,7 +1,6 @@
 package com.joshlong;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.joshlong.blog.*;
 import com.joshlong.videos.JobProperties;
 import com.joshlong.videos.youtube.IngestJobInitiatedEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +19,6 @@ import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.awt.print.Book;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -47,9 +45,9 @@ public class Application {
 		@Override
 		public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
 			var values = MemberCategory.values();
-			Set.of(BlogProperties.BlogRssFeed.class, Book.class, Appearance.class, Podcast.class,
-					BlogPostsOrderedEvent.class, BlogPostContentType.class, IndexRebuildStatus.class, Content.class,
-					BlogPost.class, JsonNode.class).forEach(c -> hints.reflection().registerType(c, values));
+			Set.of(BlogProperties.BlogRssFeed.class, Appearance.class, Podcast.class, BlogPostsOrderedEvent.class,
+					BlogPostContentType.class, IndexRebuildStatus.class, Content.class, BlogPost.class, JsonNode.class)
+					.forEach(c -> hints.reflection().registerType(c, values));
 		}
 
 	}
