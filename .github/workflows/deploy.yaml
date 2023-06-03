@@ -2,7 +2,7 @@ name: Deploy
 
 env:
 
-
+  BLOG_INDEX_REBUILD_KEY : ${{ secrets.BLOG_INDEX_REBUILD_KEY }}
   SPRING_R2DBC_URL: r2dbc:postgresql://${{secrets.JOSHLONG_DB_HOST}}/${{ secrets.JOSHLONG_DB_SCHEMA }}
   SPRING_R2DBC_PASSWORD: ${{ secrets.JOSHLONG_DB_PASSWORD }}
   SPRING_R2DBC_USERNAME: ${{ secrets.JOSHLONG_DB_USERNAME }}
