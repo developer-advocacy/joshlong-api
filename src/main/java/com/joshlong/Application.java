@@ -23,6 +23,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import java.awt.print.Book;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -64,10 +65,24 @@ public class Application {
 
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
+
+				var hosts = new HashSet<String>();
+				for (var ch : properties.corsHosts()) {
+					if (ch.endsWith("{expand}")) {
+						var base = ch.substring(0, ch.lastIndexOf("{expand}"));
+						for (var prefix : Set.of("https://", "http://", "https://www.", "http://www."))
+							hosts.add(prefix + base);
+					}
+					else {
+						hosts.add(ch);
+					}
+				}
+
+				var hostsArray = hosts.toArray(new String[0]);
 				var methods = Stream.of(HttpMethod.values()).map(HttpMethod::name).toArray(String[]::new);
 				log.info("the CORS methods are :" + String.join(", ", methods));
-				log.info("the CORS hosts are " + Arrays.toString(properties.corsHosts()));
-				registry.addMapping("/**").allowedOrigins(properties.corsHosts()).allowedMethods(methods).maxAge(3600);
+				log.info("the CORS hosts are " + Arrays.toString(hostsArray));
+				registry.addMapping("/**").allowedOrigins(hostsArray).allowedMethods(methods).maxAge(3600);
 			}
 		};
 	}
