@@ -15,7 +15,7 @@ spec:
         app: joshlong-api
     spec:
       containers:
-        - image: gcr.io/pgtm-jlong/joshlong-api
+        - image: gcr.io/joshlong/joshlong-api
           imagePullPolicy: Always
           name: joshlong-api
 
