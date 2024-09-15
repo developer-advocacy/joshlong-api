@@ -1,6 +1,6 @@
 package com.joshlong.videos.youtube.jobs;
 
-//import com.joshlong.twitter.Twitter;
+import com.joshlong.twitter.Twitter;
 import com.joshlong.videos.youtube.client.Video;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -10,7 +10,6 @@ import org.springframework.r2dbc.core.DatabaseClient;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.net.URL;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -26,7 +25,7 @@ class PromotionJob implements ReactiveJob<Boolean> {
 
 	private final DatabaseClient db;
 
-	// private final Twitter twitterClient;
+	private final Twitter twitterClient;
 
 	private final String twitterClientId, twitterClientSecret;
 
@@ -137,12 +136,9 @@ class PromotionJob implements ReactiveJob<Boolean> {
 	private Mono<Boolean> tweet(Video video) {
 		var when = Date.from(
 				Instant.now().plus(5, TimeUnit.MINUTES.toChronoUnit()).atZone(ZoneId.systemDefault()).toInstant());
-		// var client = new Twitter.Client(this.twitterClientId,
-		// this.twitterClientSecret);
-		// var text = TweetTextComposer.compose(video.title(), video.videoId());
-		// return this.twitterClient.scheduleTweet(client, when, this.twitterUsername,
-		// text, null);
-		return Mono.just(true);
+		var client = new Twitter.Client(this.twitterClientId, this.twitterClientSecret);
+		var text = TweetTextComposer.compose(video.title(), video.videoId());
+		return this.twitterClient.scheduleTweet(client, when, this.twitterUsername, text, null);
 	}
 
 	private static List<String> a(Object tags) {
