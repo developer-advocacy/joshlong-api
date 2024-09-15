@@ -14,6 +14,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Comparator;
@@ -39,10 +41,10 @@ class DefaultPodcastService implements PodcastService {
 
 	private final Object monitor = new Object();
 
-	DefaultPodcastService(BlogProperties properties, ObjectMapper objectMapper) throws IOException {
+	DefaultPodcastService(BlogProperties properties, ObjectMapper objectMapper) throws IOException, URISyntaxException {
 		this.objectMapper = objectMapper;
 		this.rootUri = properties.bootifulPodcastApiServerUri();
-		this.uri = new URL(this.rootUri + "/site/podcasts");
+		this.uri = new URI(this.rootUri + "/site/podcasts").toURL();
 	}
 
 	@Override
@@ -56,27 +58,33 @@ class DefaultPodcastService implements PodcastService {
 	}
 
 	@EventListener(IndexingFinishedEvent.class)
-	public void refresh() throws IOException {
-		log.info("refreshing " + PodcastService.class.getName());
-		var response = this.objectMapper.readValue(this.uri, new TypeReference<Collection<JsonNode>>() {
-		});
-		synchronized (this.monitor) {
-			this.podcasts.clear();
-			this.podcasts.addAll(response//
-					.stream()//
-					.map(node -> {
-						var id = JsonUtils.valueOrNull(node, "id", Integer::parseInt);
-						var uid = JsonUtils.valueOrNull(node, "uid");
-						var title = JsonUtils.valueOrNull(node, "title");
-						var date = new Date(node.get("date").longValue());
-						var episodePhotoUri = JsonUtils.valueOrNull(node, "episodePhotoUri", this::buildUrlFrom);
-						var episodeUri = JsonUtils.valueOrNull(node, "episodeUri", u -> buildUrlFrom(this.rootUri + u));
-						var description = JsonUtils.valueOrNull(node, "description");
-						return new Podcast(id, uid, title, date, episodePhotoUri, episodeUri, description);
-					})//
-					.sorted(Comparator.comparing(Podcast::date).reversed())//
-					.toList() //
-			);
+	void refresh() {
+		try {
+			log.info("refreshing {}", PodcastService.class.getName());
+			var response = this.objectMapper.readValue(this.uri, new TypeReference<Collection<JsonNode>>() {
+			});
+			synchronized (this.monitor) {
+				this.podcasts.clear();
+				this.podcasts.addAll(response//
+						.stream()//
+						.map(node -> {
+							var id = JsonUtils.valueOrNull(node, "id", Integer::parseInt);
+							var uid = JsonUtils.valueOrNull(node, "uid");
+							var title = JsonUtils.valueOrNull(node, "title");
+							var date = new Date(node.get("date").longValue());
+							var episodePhotoUri = JsonUtils.valueOrNull(node, "episodePhotoUri", this::buildUrlFrom);
+							var episodeUri = JsonUtils.valueOrNull(node, "episodeUri",
+									u -> buildUrlFrom(this.rootUri + u));
+							var description = JsonUtils.valueOrNull(node, "description");
+							return new Podcast(id, uid, title, date, episodePhotoUri, episodeUri, description);
+						})//
+						.sorted(Comparator.comparing(Podcast::date).reversed())//
+						.toList() //
+				);
+			}
+		} //
+		catch (Throwable t) {
+			log.warn("we couldn't connect to the podcast feed! {}", this.uri);
 		}
 	}
 

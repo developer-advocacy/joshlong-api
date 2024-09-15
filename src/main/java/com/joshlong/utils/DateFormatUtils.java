@@ -28,7 +28,7 @@ public abstract class DateFormatUtils {
 	}
 
 	private static SimpleDateFormat getSimpleDateDateFormat() {
-		return new DateFormatUtils.SiteSimpleDateFormat("y-M-d");
+		return new DateFormatUtils.SiteSimpleDateFormat("yyyy-MM-dd");
 	}
 
 	/*

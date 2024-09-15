@@ -13,21 +13,23 @@ import org.springframework.util.StringUtils;
 
 import java.io.*;
 import java.text.DateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
 @Slf4j
 class DefaultBlogPostService implements BlogPostService {
 
-	private final MarkdownService markdownService;
+	private final DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-	private final DateFormat simpleDateFormat;
+	private final MarkdownService markdownService;
 
 	private final String apiRoot;
 
-	DefaultBlogPostService(MarkdownService markdownService, DateFormat simpleDateFormat, String apiRoot) {
+	DefaultBlogPostService(MarkdownService markdownService, String apiRoot) {
 		this.markdownService = markdownService;
-		this.simpleDateFormat = simpleDateFormat;
 		this.apiRoot = apiRoot;
 	}
 
@@ -52,11 +54,11 @@ class DefaultBlogPostService implements BlogPostService {
 				: BlogPostContentType.HTML;
 		return buildBlogPostFrom(type, path, new FileInputStream(file));
 	}
-
 	/*
 	 * Given the HTML, we can use JSoup to discover the source attributes for all images
 	 * in the markup
 	 */
+
 	private List<String> discoverImages(String html) {
 		var results = new ArrayList<String>();
 		var document = Jsoup.parse(html);
@@ -103,7 +105,7 @@ class DefaultBlogPostService implements BlogPostService {
 		var document = Jsoup.parse(html);
 		var ps = document.getElementsByTag("p");
 		var results = new ArrayList<String>();
-		if (ps != null && ps.size() > 0) {
+		if (ps != null && !ps.isEmpty()) {
 			ps.forEach(element -> results.add(element.text()));
 		}
 		var list = results.stream().limit(countOfParagraphs).collect(Collectors.toList());
@@ -133,8 +135,15 @@ class DefaultBlogPostService implements BlogPostService {
 
 	@SneakyThrows
 	private Date buildHeaderDate(String date) {
-		Assert.state(3 == date.split("-").length, () -> "there should be 3 parts to the date");
-		return this.simpleDateFormat.parse(date);
+		try {
+
+			var dtf = dateTimeFormatter;
+			var ld = LocalDate.parse(date, dtf);
+			return Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant());
+		} //
+		catch (Throwable throwable) {
+			throw new RuntimeException(throwable);
+		}
 	}
 
 	@SneakyThrows

@@ -1,6 +1,6 @@
 package com.joshlong.videos.youtube.jobs;
 
-import com.joshlong.twitter.Twitter;
+//import com.joshlong.twitter.Twitter;
 import com.joshlong.videos.youtube.client.Video;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
@@ -9,6 +9,7 @@ import org.reactivestreams.Publisher;
 import org.springframework.r2dbc.core.DatabaseClient;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
 import java.net.URL;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -25,7 +26,7 @@ class PromotionJob implements ReactiveJob<Boolean> {
 
 	private final DatabaseClient db;
 
-	private final Twitter twitterClient;
+	// private final Twitter twitterClient;
 
 	private final String twitterClientId, twitterClientSecret;
 
@@ -136,15 +137,18 @@ class PromotionJob implements ReactiveJob<Boolean> {
 	private Mono<Boolean> tweet(Video video) {
 		var when = Date.from(
 				Instant.now().plus(5, TimeUnit.MINUTES.toChronoUnit()).atZone(ZoneId.systemDefault()).toInstant());
-		var client = new Twitter.Client(this.twitterClientId, this.twitterClientSecret);
-		var text = TweetTextComposer.compose(video.title(), video.videoId());
-		return this.twitterClient.scheduleTweet(client, when, this.twitterUsername, text, null);
+		// var client = new Twitter.Client(this.twitterClientId,
+		// this.twitterClientSecret);
+		// var text = TweetTextComposer.compose(video.title(), video.videoId());
+		// return this.twitterClient.scheduleTweet(client, when, this.twitterUsername,
+		// text, null);
+		return Mono.just(true);
 	}
 
 	private static List<String> a(Object tags) {
 		if (tags instanceof List list)
-			if (list.size() > 0)
-				if (list.iterator().next() instanceof String)
+			if (!list.isEmpty())
+				if (list.getFirst() instanceof String)
 					return (List<String>) list;
 
 		if (tags instanceof String[] stringsArray)
@@ -161,7 +165,7 @@ class PromotionJob implements ReactiveJob<Boolean> {
 		var videoId = (String) rs.get("video_id");
 		return new Video(videoId, s(rs.get("title")), s(rs.get("description")),
 				Date.from(((LocalDateTime) rs.get("published_at")).atZone(ZoneId.systemDefault()).toInstant()),
-				new URL(s(rs.get("standard_thumbnail"))), a(rs.get("tags")), i(rs.get("category_id")),
+				new URI(s(rs.get("standard_thumbnail"))).toURL(), a(rs.get("tags")), i(rs.get("category_id")),
 				i(rs.get("view_count")), i(rs.get("like_count")), i(rs.get("favorite_count")),
 				i(rs.get("comment_count")), null, false);
 	}

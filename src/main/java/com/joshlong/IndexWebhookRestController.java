@@ -41,8 +41,8 @@ class IndexWebhookRestController {
 		var myHash = getGithubWebhookRequestSha256HeaderValue(requestEntity);
 		if (log.isDebugEnabled()) {
 			requestEntity.getHeaders().forEach((k, v) -> log.debug(k + "=" + v));
-			log.debug("mine: " + theirHash);
-			log.debug("theirs: " + myHash);
+			log.debug("mine: {}", theirHash);
+			log.debug("theirs: {}", myHash);
 		}
 		if (StringUtils.hasText(myHash) && StringUtils.hasText(theirHash)) {
 			if (myHash.contains(theirHash))
@@ -56,8 +56,8 @@ class IndexWebhookRestController {
 		var headerKey = "X-Hub-Signature-256";
 		if (headers.containsKey(headerKey)) {
 			var strings = headers.get(headerKey);
-			if (Objects.requireNonNull(strings).size() > 0) {
-				return strings.get(0).trim();
+			if (!Objects.requireNonNull(strings).isEmpty()) {
+				return strings.getFirst().trim();
 			}
 		}
 		return null;
