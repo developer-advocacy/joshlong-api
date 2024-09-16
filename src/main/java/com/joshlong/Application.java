@@ -15,6 +15,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.http.HttpMethod;
+import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -30,6 +31,15 @@ import java.util.stream.Stream;
 @ImportRuntimeHints(Application.Hints.class)
 @EnableConfigurationProperties({ JobProperties.class, BlogProperties.class })
 public class Application {
+
+	@Bean
+	ApplicationRunner countRunner(DatabaseClient db) {
+		return args -> {
+			var counter = db.sql("select count(*) as counter from yt_channel_videos").fetch().all()
+					.map(map -> map.get("counter")).singleOrEmpty().block();
+			log.info("the count is {}", counter);
+		};
+	}
 
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
