@@ -31,24 +31,7 @@ import java.util.stream.Stream;
 @EnableConfigurationProperties({ JobProperties.class, BlogProperties.class })
 public class Application {
 
-	@Bean
-	ApplicationRunner countRunner(Environment environment, DatabaseClient db) {
-		return args -> {
-
-			var counter = db.sql("select count(*) as counter from yt_channel_videos").fetch().all()
-					.map(map -> map.get("counter")).singleOrEmpty().block();
-			log.info("the count is {}", counter);
-		};
-	}
-
 	public static void main(String[] args) {
-
-		var environment = System.getenv();
-		var creds = Map.of("pw", Objects.requireNonNull(environment.get("SPRING_R2DBC_PASSWORD")), "url",
-				Objects.requireNonNull(environment.get("SPRING_R2DBC_URL")), "user",
-				Objects.requireNonNull(environment.get("SPRING_R2DBC_PASSWORD")));
-		log.info("credentials: {}", creds);
-
 		SpringApplication.run(Application.class, args);
 	}
 
