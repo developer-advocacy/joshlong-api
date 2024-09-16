@@ -35,11 +35,6 @@ public class Application {
 	ApplicationRunner countRunner(Environment environment, DatabaseClient db) {
 		return args -> {
 
-			var creds = Map.of("pw", Objects.requireNonNull(environment.getProperty("SPRING_R2DBC_PASSWORD")), "url",
-					Objects.requireNonNull(environment.getProperty("SPRING_R2DBC_URL")), "user",
-					Objects.requireNonNull(environment.getProperty("SPRING_R2DBC_PASSWORD")));
-			log.info("credentials: {}", creds);
-
 			var counter = db.sql("select count(*) as counter from yt_channel_videos").fetch().all()
 					.map(map -> map.get("counter")).singleOrEmpty().block();
 			log.info("the count is {}", counter);
@@ -47,6 +42,13 @@ public class Application {
 	}
 
 	public static void main(String[] args) {
+
+		var environment = System.getenv();
+		var creds = Map.of("pw", Objects.requireNonNull(environment.get("SPRING_R2DBC_PASSWORD")), "url",
+				Objects.requireNonNull(environment.get("SPRING_R2DBC_URL")), "user",
+				Objects.requireNonNull(environment.get("SPRING_R2DBC_PASSWORD")));
+		log.info("credentials: {}", creds);
+
 		SpringApplication.run(Application.class, args);
 	}
 
@@ -93,8 +95,8 @@ public class Application {
 
 				var hostsArray = hosts.toArray(new String[0]);
 				var methods = Stream.of(HttpMethod.values()).map(HttpMethod::name).toArray(String[]::new);
-				log.info("the CORS methods are :" + String.join(", ", methods));
-				log.info("the CORS hosts are " + Arrays.toString(hostsArray));
+				log.info("the CORS methods are :{}", String.join(", ", methods));
+				log.info("the CORS hosts are {}", Arrays.toString(hostsArray));
 				registry.addMapping("/**").allowedOrigins(hostsArray).allowedMethods(methods).maxAge(3600);
 			}
 		};
