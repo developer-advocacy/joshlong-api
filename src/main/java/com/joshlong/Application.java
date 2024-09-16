@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 public class Application {
 
 	public static void main(String[] args) {
+
 		var environment = System.getenv();
 		var creds = Map.of("pw", Objects.requireNonNull(environment.get("SPRING_R2DBC_PASSWORD")), "url",
 				Objects.requireNonNull(environment.get("SPRING_R2DBC_URL")), "user",
