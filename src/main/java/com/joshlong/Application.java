@@ -35,7 +35,7 @@ public class Application {
 	public static void main(String[] args) {
 		var environment = System.getenv();
 		var map = new HashMap<String, String>();
-		for (var k : "SPRING_R2DBC_PASSWORD,SPRING_R2DBC_URL,SPRING_R2DBC_PASSWORD".split(",")) {
+		for (var k : "SPRING_R2DBC_PASSWORD,SPRING_R2DBC_URL,SPRING_R2DBC_USERNAME".split(",")) {
 			map.put(k, environment.get(k));
 		}
 		log.info("credentials: {}", map);
