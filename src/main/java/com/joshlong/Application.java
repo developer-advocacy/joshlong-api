@@ -14,6 +14,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportRuntimeHints;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.web.reactive.config.CorsRegistry;
@@ -21,9 +22,7 @@ import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -33,8 +32,14 @@ import java.util.stream.Stream;
 public class Application {
 
 	@Bean
-	ApplicationRunner countRunner(DatabaseClient db) {
+	ApplicationRunner countRunner(Environment environment, DatabaseClient db) {
 		return args -> {
+
+			var creds = Map.of("pw", Objects.requireNonNull(environment.getProperty("SPRING_R2DBC_PASSWORD")), "url",
+					Objects.requireNonNull(environment.getProperty("SPRING_R2DBC_URL")), "user",
+					Objects.requireNonNull(environment.getProperty("SPRING_R2DBC_PASSWORD")));
+			log.info("credentials: {}", creds);
+
 			var counter = db.sql("select count(*) as counter from yt_channel_videos").fetch().all()
 					.map(map -> map.get("counter")).singleOrEmpty().block();
 			log.info("the count is {}", counter);
