@@ -20,7 +20,10 @@ import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.stream.Stream;
 
 @Slf4j
@@ -30,13 +33,12 @@ import java.util.stream.Stream;
 public class Application {
 
 	public static void main(String[] args) {
-
 		var environment = System.getenv();
-		var creds = Map.of("pw", Objects.requireNonNull(environment.get("SPRING_R2DBC_PASSWORD")), "url",
-				Objects.requireNonNull(environment.get("SPRING_R2DBC_URL")), "user",
-				Objects.requireNonNull(environment.get("SPRING_R2DBC_PASSWORD")));
-		log.info("credentials: {}", creds);
-
+		var map = new HashMap<String, String>();
+		for (var k : "SPRING_R2DBC_PASSWORD,SPRING_R2DBC_URL,SPRING_R2DBC_PASSWORD".split(",")) {
+			map.put(k, environment.get(k));
+		}
+		log.info("credentials: {}", map);
 		SpringApplication.run(Application.class, args);
 	}
 
