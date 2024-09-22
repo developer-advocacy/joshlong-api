@@ -3,7 +3,6 @@ package com.joshlong.content;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.joshlong.BlogPost;
 import com.joshlong.BlogProperties;
-import com.joshlong.ContentService;
 import com.joshlong.IndexService;
 import com.joshlong.index.IndexingFinishedEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -40,14 +39,17 @@ class ContentConfiguration {
 	}
 
 	@Bean
-	ContentService<String> aboutContentService() {
-		return new HtmlPassthroughContentService(() -> indexService.getIndex().get("/about.html").processedContent());
+	HtmlPassthroughContentService aboutContentService() {
+		return this.passthroughContentService("/about.html");
 	}
 
 	@Bean
-	ContentService<String> abstractsContentService() {
-		return new HtmlPassthroughContentService(
-				() -> indexService.getIndex().get("/abstracts.html").processedContent());
+	HtmlPassthroughContentService abstractsContentService() {
+		return this.passthroughContentService("/abstracts.html");
+	}
+
+	private HtmlPassthroughContentService passthroughContentService(String key) {
+		return new HtmlPassthroughContentService(() -> indexService.getIndex().get(key).processedContent());
 	}
 
 	@Bean
@@ -62,7 +64,7 @@ class ContentConfiguration {
 
 	private JsonContentService buildContentService(String fn) throws Exception {
 		var file = new File(this.properties.localCloneDirectory().getFile(), "content/" + fn);
-		log.info("the file is " + file.getAbsolutePath() + " and it exists? " + (file.exists()));
+		log.info("the file is {} and it exists? {}", file.getAbsolutePath(), file.exists());
 		var fileResource = new FileSystemResource(file);
 		return new JsonContentService(fileResource, this.resolver, this.objectMapper);
 	}

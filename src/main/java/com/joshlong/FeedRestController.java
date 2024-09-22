@@ -38,7 +38,7 @@ class FeedRestController {
 
 	@EventListener
 	public void blogPostsUpdatedEvent(BlogPostsOrderedEvent updatedEvent) throws Exception {
-		reset(updatedEvent.getSource());
+		this.reset(updatedEvent.getSource());
 	}
 
 	private void reset(List<BlogPost> posts) throws Exception {

@@ -15,7 +15,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.http.HttpMethod;
-import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -33,16 +32,7 @@ import java.util.stream.Stream;
 public class Application {
 
 	public static void main(String[] args) {
-		for (var e : new String[] { "SPRING_DATASOURCE_USERNAME", "SPRING_DATASOURCE_PASSWORD",
-				"SPRING_DATASOURCE_URL" })
-			System.out.println(e + ":" + System.getenv(e));
 		SpringApplication.run(Application.class, args);
-	}
-
-	@Bean
-	ApplicationRunner countingApplicationRunner(JdbcClient dbc) {
-		return args -> dbc.sql("select count(*) as c from yt_channels").query((rs, i) -> rs.getInt("c")).list()
-				.forEach(count -> System.out.println("cnt: " + count));
 	}
 
 	@Bean
