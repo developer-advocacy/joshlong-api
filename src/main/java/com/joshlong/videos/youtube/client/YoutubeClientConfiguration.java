@@ -7,7 +7,7 @@ import org.springframework.aot.hint.RuntimeHintsRegistrar;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportRuntimeHints;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
 
 import java.util.Set;
 
@@ -27,7 +27,7 @@ class YoutubeClientConfiguration {
 	}
 
 	@Bean
-	YoutubeClient youtubeClient(WebClient http, JobProperties properties) {
+	YoutubeClient youtubeClient(RestClient http, JobProperties properties) {
 		return new DefaultYoutubeClient(http, properties.youtube().apiKey());
 	}
 

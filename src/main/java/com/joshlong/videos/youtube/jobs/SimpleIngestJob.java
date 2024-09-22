@@ -7,9 +7,10 @@ import com.joshlong.videos.youtube.client.YoutubeClient;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.r2dbc.core.DatabaseClient;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import org.springframework.jdbc.core.simple.JdbcClient;
+
+import java.util.ArrayList;
+import java.util.Collection;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -17,13 +18,13 @@ class SimpleIngestJob implements IngestJob {
 
 	private final YoutubeClient client;
 
-	private final DatabaseClient databaseClient;
+	private final JdbcClient db;
 
 	private final String channelId;
 
 	@Override
 	@SneakyThrows
-	public Flux<Playlist> run() {
+	public Collection<Playlist> run() {
 		log.info("=======================================================");
 		log.info("INGEST (" + this.channelId + ")");
 		log.info("=======================================================");
@@ -37,54 +38,51 @@ class SimpleIngestJob implements IngestJob {
 		// from the API and write it to yt_playlists
 		// 5. for each unique channel in yt_channel_videos, get the channel data from the
 		// API and write it to yt_channels
-		var youtubeIngestPipeline = this.resetTablesFreshStatus()//
-				.then(client.getChannelById(this.channelId))//
-				.flatMapMany(channel -> {//
-					var allVideos = client.getAllVideosByChannel(channel.channelId())//
-							.filter(v -> !v.upcoming()) // we do NOT want things with zero
-							// views from the future in the
-							// mix! division by zero is BAD
-							.flatMap(this::doWriteVideo);
-					var playlistVideos = client.getAllPlaylistsByChannel(channel.channelId())//
-							.flatMap(playlist -> client.getAllVideosByPlaylist(playlist.playlistId())
-									.flatMap(video -> doWritePlaylistsVideos(channel, playlist, video)));
-					return playlistVideos.thenMany(allVideos);
-				})//
-				.thenMany(this.enrichChannels())//
-				.thenMany(this.enrichPlaylists());//
-		return youtubeIngestPipeline//
-				.doOnSubscribe(sub -> log.info("starting the Youtube Ingest process"));
-
+		var allPlaylists = new ArrayList<Playlist>();
+		this.resetTablesFreshStatus();
+		var channel = this.client.getChannelById(this.channelId);
+		this.client
+				.getAllVideosByChannel(channel.channelId())
+				.stream()
+				.filter(v -> !v.upcoming())
+				.forEach(this::doWriteVideo);
+		var playlistsByChannel = this.client.getAllPlaylistsByChannel(channel.channelId());
+		for (var playlist : playlistsByChannel) {
+			allPlaylists.add(playlist);
+			var videos = this.client.getAllVideosByChannel(playlist.playlistId());
+			for (var video : videos) {
+				this.doWritePlaylistsVideos(channel, playlist, video);
+			}
+		}
+		this.enrichChannels();
+		this.enrichPlaylists();
+		return allPlaylists;
 	}
 
-	private Flux<Channel> enrichChannels() {
-		return this.databaseClient//
+	private void enrichChannels() {
+		var list = this.db//
 				.sql(" select distinct channel_id from yt_channel_videos ")//
-				.fetch()//
-				.all()//
-				.map(r -> (String) r.get("channel_id"))//
-				.flatMap(client::getChannelById)//
-				.flatMap(this::doWriteChannel);
+				.query((r, i) -> r.getString("channel_id"))
+				.list();//
+		var newList = new ArrayList<Channel>();
+		for (var s : list) {
+			var c = client.getChannelById(s);
+			this.doWriteChannel(c);
+			newList.add(c);
+		}
 	}
 
-	private Flux<Playlist> enrichPlaylists() {
-		// 4. for each unique playlist_id in yt_playlist_videos, get the playlist data
-		// from the API and write it to yt_playlists todo
-		return this.databaseClient.sql("""
-				select distinct playlist_id from yt_playlist_videos pv
-				""")//
-				.fetch()//
-				.all()//
-				.map(record -> (String) record.get("playlist_id"))//
-				.flatMap(pid -> this.client//
-						.getPlaylistById(pid)//
-						.flatMapMany(this::doWritePlaylist)//
-				);
-
+	private void enrichPlaylists() {
+		var list = this.db
+				.sql(" select distinct playlist_id from yt_playlist_videos pv ")//
+				.query((rs, rowNum) -> rs.getString("playlist_id"))
+				.single();//
+		var playlist = this.client.getPlaylistById(list);
+		this.doWritePlaylist(playlist);
 	}
 
-	private Mono<Playlist> doWritePlaylistsVideos(Channel channel, Playlist playlist, Video video) {
-		var writePlaylistVideo = this.databaseClient.sql("""
+	private void doWritePlaylistsVideos(Channel channel, Playlist playlist, Video video) {
+		this.db.sql("""
 				insert into yt_playlist_videos(
 				    video_id,
 				    playlist_id
@@ -93,14 +91,15 @@ class SimpleIngestJob implements IngestJob {
 				on conflict on constraint yt_playlist_videos_pkey
 				do nothing
 				""")//
-				.bind("videoId", video.videoId())//
-				.bind("playlistId", playlist.playlistId())//
-				.fetch()//
-				.rowsUpdated();
-		return writePlaylistVideo.then(doWriteVideo(video)).then(Mono.just(playlist));
+				.param("videoId", video.videoId())//
+				.param("playlistId", playlist.playlistId())//
+				.update();
+
+		this.doWriteVideo(video);
+
 	}
 
-	private Mono<Playlist> doWritePlaylist(Playlist playlist) {
+	private void doWritePlaylist(Playlist playlist) {
 		var sql = """
 				insert into yt_playlists (
 				    playlist_id,
@@ -115,33 +114,33 @@ class SimpleIngestJob implements IngestJob {
 				on conflict on constraint yt_playlists_pkey
 				do update SET fresh = true where yt_playlists.playlist_id = :playlistId
 				""";
-		return this.databaseClient.sql(sql)//
-				.bind("itemCount", playlist.itemCount())//
-				.bind("description", playlist.description())//
-				.bind("title", playlist.title())//
-				.bind("publishedAt", playlist.publishedAt())//
-				.bind("channelId", playlist.channelId())//
-				.bind("playlistId", playlist.playlistId())//
-				.fetch()//
-				.rowsUpdated()//
-				.map(count -> playlist);
+		this.db.sql(sql)//
+				.param("itemCount", playlist.itemCount())//
+				.param("description", playlist.description())//
+				.param("title", playlist.title())//
+				.param("publishedAt", playlist.publishedAt())//
+				.param("channelId", playlist.channelId())//
+				.param("playlistId", playlist.playlistId())//
+				.update();
 	}
 
-	private Mono<Video> doWriteVideo(Video video) {
+	private void doWriteVideo(Video video) {
+		
 		if (log.isDebugEnabled())
-			log.debug("video (" + video.channelId() + ") (" + video.videoId() + ") " + video.title() + " ");
+			log.debug("video ({}) ({}) {} ", video.channelId(), video.videoId(), video.title());
 
-		var writeChannelVideo = this.databaseClient.sql("""
+		this.db//
+				.sql("""
 				insert into yt_channel_videos(video_id, channel_id)
 				values(:vid, :cid)
 				on conflict on constraint yt_channel_videos_pkey
 				do nothing
-				""").bind("vid", video.videoId())//
-				.bind("cid", video.channelId())//
-				.fetch()//
-				.rowsUpdated();
+						""")// 
+				.param("vid", video.videoId())//
+				.param("cid", video.channelId())//
+				.update();
 
-		var videoInsert = this.databaseClient//
+		this.db//
 				.sql("""
 						  insert into yt_videos (
 							video_id ,
@@ -179,50 +178,43 @@ class SimpleIngestJob implements IngestJob {
 						where
 						   yt_videos.video_id =  :videoId
 						""")//
-				.bind("videoId", video.videoId())//
-				.bind("title", video.title()) //
-				.bind("description", video.description())//
-				.bind("publishedAt", video.publishedAt())//
-				.bind("standardThumbnail", video.standardThumbnail().toExternalForm())//
-				.bind("categoryId", video.categoryId())//
-				.bind("viewCount", video.viewCount())//
-				.bind("favoriteCount", video.favoriteCount())//
-				.bind("commentCount", video.commentCount())//
-				.bind("tags", video.tags().toArray(new String[0]))//
-				.bind("likeCount", video.likeCount())//
-				.fetch()//
-				.rowsUpdated()//
-				.map(count -> video);
+				.param("videoId", video.videoId())//
+				.param("title", video.title()) //
+				.param("description", video.description())//
+				.param("publishedAt", video.publishedAt())//
+				.param("standardThumbnail", video.standardThumbnail().toExternalForm())//
+				.param("categoryId", video.categoryId())//
+				.param("viewCount", video.viewCount())//
+				.param("favoriteCount", video.favoriteCount())//
+				.param("commentCount", video.commentCount())//
+				.param("tags", video.tags().toArray(new String[0]))//
+				.param("likeCount", video.likeCount())//
+				.update();
 
-		return writeChannelVideo.then(videoInsert);
 	}
 
 	@SneakyThrows
-	private Mono<Channel> doWriteChannel(Channel channel) {
+	private void doWriteChannel(Channel channel) {
 		var sql = """
 				    insert into yt_channels(channel_id, description, published_at, title, fresh)
 				    values (  :channelId , :description, :publishedAt, :title, true)
 				    on conflict on constraint yt_channels_pkey
 				    do update SET fresh = true where yt_channels.channel_id = :channelId
 				""";
-		return this.databaseClient.sql(sql)//
-				.bind("channelId", channel.channelId())//
-				.bind("description", channel.description())//
-				.bind("publishedAt", channel.publishedAt())//
-				.bind("title", channel.title())//
-				.fetch()//
-				.rowsUpdated()//
-				.thenReturn(channel);
+		this.db
+				.sql(sql)//
+				.param("channelId", channel.channelId())//
+				.param("description", channel.description())//
+				.param("publishedAt", channel.publishedAt())//
+				.param("title", channel.title())//
+				.update();
+
 	}
 
-	private Flux<Long> resetTablesFreshStatus() {
-		return Flux//
-				.fromArray("yt_playlist_videos,yt_channels,yt_playlists,yt_videos".split(","))//
-				.flatMap(table -> databaseClient//
-						.sql("update " + table + " set fresh = false")//
-						.fetch()//
-						.rowsUpdated()//
-				);
+	private void resetTablesFreshStatus() {
+		var tables = "yt_playlist_videos,yt_channels,yt_playlists,yt_videos".split(",");
+		for (var table : tables)
+			this.db.sql("update " + table + " set fresh = false").update();
 	}
 
 }

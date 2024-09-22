@@ -7,6 +7,8 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.stereotype.Controller;
 import reactor.core.publisher.Flux;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -24,34 +26,40 @@ class VideoGraphqlController {
 	}
 
 	@QueryMapping
-	Flux<Playlist> playlistsByName(@Argument String name) {
+	Collection<Playlist> playlistsByName(@Argument String name) {
 		return this.videoService.playlistsByName(name);
 	}
 
 	@QueryMapping
-	Flux<Channel> channels() {
+	Collection<Channel> channels() {
 		return this.videoService.channels();
 	}
 
 	@QueryMapping
-	Flux<Video> videosByPlaylist(@Argument String playlistId) {
-		return this.videoService.playlistById(playlistId).flatMapMany(this.videoService::videosByPlaylist);
+	Collection<Video> videosByPlaylist(@Argument String playlistId) {
+		var pl = this.videoService.playlistById(playlistId);
+		return this.videoService.videosByPlaylist(pl);
 	}
 
 	@QueryMapping
-	Flux<Video> videosByChannel(@Argument String channelId) {
-		return this.videoService.channelById(channelId).flatMapMany(this.videoService::videosByChannel);
+	Collection<Video> videosByChannel(@Argument String channelId) {
+		return videoService.videosByChannel(this.videoService.channelById(channelId));
 	}
 
 	@QueryMapping
-	Flux<Video> springtipsVideos() {
-		return this.videoService.playlistsByName("Spring Tips").flatMap(this.videoService::videosByPlaylist);
+	Collection<Video> springtipsVideos() {
+		var springTips = this.videoService.playlistsByName("Spring Tips");
+		if (springTips.isEmpty()) {
+			return new ArrayList<>();
+		}
+		return this.videoService
+				.videosByPlaylist(springTips.getFirst());
 	}
 
 	@QueryMapping
-	Flux<Video> coffeesoftwareVideos() {
-		return this.videoService.channelById(this.ids.get("coffeesoftware"))
-				.flatMapMany(this.videoService::videosByChannel);
+	Collection <Video> coffeesoftwareVideos() {
+		return this.videoService.videosByChannel(
+				this.videoService.channelById(this.ids.get("coffeesoftware")));
 	}
 
 }

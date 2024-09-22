@@ -5,19 +5,16 @@ import com.joshlong.videos.JobProperties;
 import com.joshlong.videos.youtube.IngestJobInitiatedEvent;
 import com.joshlong.videos.youtube.client.Playlist;
 import com.joshlong.videos.youtube.client.YoutubeClient;
-import io.r2dbc.spi.ConnectionFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.reactivestreams.Publisher;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.r2dbc.connection.R2dbcTransactionManager;
-import org.springframework.r2dbc.core.DatabaseClient;
-import org.springframework.transaction.ReactiveTransactionManager;
-import org.springframework.transaction.reactive.TransactionalOperator;
-import reactor.core.publisher.Flux;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.simple.JdbcClient;
 
+import javax.sql.DataSource;
 import java.util.ArrayList;
+import java.util.Collection;
 
 @Slf4j
 @Configuration
@@ -35,24 +32,12 @@ class JobConfiguration {
 	}
 
 	private void doRunIngestJob(IngestJob ingest, PromotionJob promotion) {
-		var justIngest = Flux.from(ingest.run());
-		var justPromotion = Flux.from(promotion.run());
-		var both = justIngest.thenMany(justPromotion).doOnError(ex -> log.error("something's gone wrong!", ex));
-		both.subscribe();
+		for (var job : new Job<?>[]{ingest, promotion})
+			job.run();  
 	}
 
 	@Bean
-	ReactiveTransactionManager reactiveTransactionManager(ConnectionFactory cf) {
-		return new R2dbcTransactionManager(cf);
-	}
-
-	@Bean
-	TransactionalOperator transactionalOperator(ReactiveTransactionManager rtm) {
-		return TransactionalOperator.create(rtm);
-	}
-
-	@Bean
-	IngestJob compositeIngestJob(YoutubeClient client, DatabaseClient databaseClient, JobProperties properties) {
+	IngestJob compositeIngestJob(YoutubeClient client, JdbcClient databaseClient, JobProperties properties) {
 		var channelIds = properties.batch().channelIds();
 		var compositeList = new IngestJob[channelIds.length];
 		var indx = 0;
@@ -70,19 +55,28 @@ class JobConfiguration {
 		}
 
 		@Override
-		public Publisher<Playlist> run() {
-			var list = new ArrayList<Publisher<Playlist>>();
-			for (var j : this.jobs)
-				list.add(j.run());
-			return Flux.concat(list);
+		public Collection<Playlist> run() {
+			var list = new ArrayList<Playlist>();
+			for (var j : this.jobs) {
+				var run = j.run();
+				list.addAll(run);
+			}
+			return list;
 		}
 
 	}
 
+
 	@Bean
-	PromotionJob promotionJob(DatabaseClient databaseClient, Twitter twitter, JobProperties properties) {
+	JdbcTemplate jdbcTemplate(DataSource dataSource) {
+		return new JdbcTemplate(dataSource);
+	}
+	@Bean
+	PromotionJob promotionJob(JdbcTemplate template, Twitter twitter, JobProperties properties) {
 		var twitterProperties = properties.twitter();
-		return new PromotionJob(databaseClient, twitter, twitterProperties.clientId(), twitterProperties.clientSecret(),
+
+		return new PromotionJob(template,
+				twitter, twitterProperties.clientId(), twitterProperties.clientSecret(),
 				twitterProperties.username(), properties.promotion().playlistIds());
 	}
 

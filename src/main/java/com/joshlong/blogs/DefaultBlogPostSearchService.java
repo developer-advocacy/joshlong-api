@@ -73,7 +73,7 @@ class DefaultBlogPostSearchService implements BlogPostSearchService {
 				.filter(index::containsKey)//
 				.map(index::get)//
 				.toList();
-		return blogPosts.size() > 0 ? blogPosts.get(0) : null;
+		return !blogPosts.isEmpty() ? blogPosts.getFirst() : null;
 	}
 
 	@Override

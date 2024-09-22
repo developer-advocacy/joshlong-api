@@ -135,9 +135,7 @@ class DefaultBlogPostService implements BlogPostService {
 	@SneakyThrows
 	private Date buildHeaderDate(String date) {
 		try {
-
-			var dtf = dateTimeFormatter;
-			var ld = LocalDate.parse(date, dtf);
+			var ld = LocalDate.parse(date, dateTimeFormatter);
 			return Date.from(ld.atStartOfDay(ZoneId.systemDefault()).toInstant());
 		} //
 		catch (Throwable throwable) {

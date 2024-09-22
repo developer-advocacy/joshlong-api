@@ -1,37 +1,24 @@
 package com.joshlong.videos.api;
 
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
+import java.util.List;
 
 /**
  * A service for working with the database.
  *
  * @author Josh Long
  */
-public interface VideoService {
+interface VideoService {
+	
+	List<Playlist> playlistsByName(String name);
 
-	Mono<Playlist> playlistById(String id);
+	List<Video> videosByChannel(Channel channel);
 
-	Flux<Video> videosByPlaylist(Playlist playlist);
+	Playlist playlistById(String id);
 
-	/**
-	 * @return Returns a {@link Video } given its {@code id}.
-	 */
-	Mono<Channel> channelById(String id);
+	List<Video> videosByPlaylist(Playlist playlist);
 
-	/**
-	 * @return all the channels in the database.
-	 */
-	Flux<Channel> channels();
+	Channel channelById(String id);
 
-	/**
-	 * @return all the videos for a given channel
-	 */
-	Flux<Video> videosByChannel(Channel channel);
-
-	/**
-	 * @return playlists by their name
-	 */
-	Flux<Playlist> playlistsByName(String name);
+	List<Channel> channels();
 
 }

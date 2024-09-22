@@ -5,11 +5,12 @@ import com.joshlong.videos.youtube.client.Video;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.reactivestreams.Publisher;
-import org.springframework.r2dbc.core.DatabaseClient;
-import reactor.core.publisher.Mono;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 
 import java.net.URI;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -21,9 +22,9 @@ import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RequiredArgsConstructor
-class PromotionJob implements ReactiveJob<Boolean> {
+class PromotionJob implements Job<Boolean> {
 
-	private final DatabaseClient db;
+	private final JdbcTemplate jdbcTemplate;
 
 	private final Twitter twitterClient;
 
@@ -34,15 +35,17 @@ class PromotionJob implements ReactiveJob<Boolean> {
 	private final String[] playlistIds;
 
 	@Override
-	public Publisher<Boolean> run() {
+	public Boolean run() {
 		log.info("=======================================================");
 		log.info("PROMOTE");
 		log.info("=======================================================");
-		return this.promotePlaylist(this.playlistIds[0]);
+		promotePlaylist(this.playlistIds[0]);
+		return true;
 	}
 
-	private Mono<Boolean> promotePlaylist(String playlistId) {
-		log.debug("going to promote playlist [" + playlistId + "]");
+	private void promotePlaylist(String playlistId) {
+		log.debug("Going to promote playlist [{}]", playlistId);
+
 		var seed = """
 				insert into yt_promotion_batches_entries (batch_id, scheduled, video_id)
 				select
@@ -60,99 +63,68 @@ class PromotionJob implements ReactiveJob<Boolean> {
 				on conflict on constraint yt_promotion_batches_entries_batch_id_scheduled_video_id_key
 				do update set scheduled = excluded.scheduled
 				""";
+
 		var currentBatchUnPromoted = """
-				select count(*) as count from yt_promotion_batches b where b.percent_promoted < 100.00 and b.batch_id = :batchId
+				select count(*) as count from yt_promotion_batches b where b.percent_promoted < 100.00 and b.batch_id = ?
 				""";
+
 		var todaysEntry = """
 				select * from yt_videos v where v.video_id in (
-				    select e.video_id from yt_promotion_batches_entries e where e.batch_id = :batchId and
+				    select e.video_id from yt_promotion_batches_entries e where e.batch_id = ? and
 				        e.promoted is null and NOW()::date = e.scheduled
 				)
 				""";
-		return this.db//
-				.sql(currentBatchUnPromoted)//
-				.bind("batchId", playlistId)//
-				.fetch()//
-				.all()//
-				.doOnNext(rec -> log.info("got count: " + rec)).flatMap(record -> {
-					var c = ((Number) record.get("count")).intValue();
-					if (c == 0) {
-						log.info("there are 0 in-flight batch entries");
-						return this.db//
-								.sql("delete from yt_promotion_batches_entries where batch_id = :batchId")
-								.bind("batchId", playlistId)//
-								.fetch()//
-								.rowsUpdated();
-					} //
-					else {
-						log.info("returning empty");
-						return Mono.empty();
-					}
-				})//
-				.doOnNext(c -> log.info("the count is " + c))//
-				.thenMany(this.db//
-						.sql(seed)//
-						.fetch()//
-						.rowsUpdated()//
-						.doOnNext(c -> log.info("ran the seed query"))) //
-				.then(this.db//
-						.sql(todaysEntry)//
-						.bind("batchId", playlistId)//
-						.fetch()//
-						.all()//
-						.doOnNext(r -> log.info("today's entry? " + r.toString()))//
-						.map(this::videoFor)//
-						.doOnNext(v -> log.info("got the video " + v.videoId()))//
-						.flatMap(this::tweet)//
-						.doOnNext(t -> log.info("tweeted? " + t))//
-						.flatMap(tweeted -> {
-							log.info("going to mark as tweeted");
-							var sql = """
-									   update yt_promotion_batches_entries
-									   set promoted= NOW()::date
-									   where
-									       batch_id = :batchId
-									   and
-									       promoted is null
-									   and
-									       scheduled = NOW()::date
-									""";
-							if (tweeted)
-								return this.db.sql(sql)//
-										.bind("batchId", playlistId)//
-										.fetch()//
-										.rowsUpdated()//
-										.map(updated -> updated > 0)//
-										.doOnNext(t -> log.info("marked as tweeted"));//
-							log.info("no tweet, therefore false");
-							return Mono.just(false);
 
-						}) //
-						.singleOrEmpty());//
+		var count = jdbcTemplate.queryForObject(currentBatchUnPromoted, Integer.class , playlistId );
+		if (count != null && count == 0) {
+			log.info("There are 0 in-flight batch entries");
+			jdbcTemplate.update("delete from yt_promotion_batches_entries where batch_id = ?", playlistId);
+		}
 
+		log.info("Inserting new entries");
+		jdbcTemplate.update(seed);
+
+		var videos = jdbcTemplate.query(todaysEntry,   new VideoRowMapper() ,
+				 playlistId);
+
+		for (Video video : videos) {
+			if (tweet(video)) {
+				log.info("Marking as tweeted");
+				String sql = """
+						update yt_promotion_batches_entries
+						set promoted = NOW()::date
+						where
+						    batch_id = ?
+						and
+						    promoted is null
+						and
+						    scheduled = NOW()::date
+						""";
+				jdbcTemplate.update(sql, playlistId);
+			}
+		}
 	}
 
 	@SneakyThrows
-	private Mono<Boolean> tweet(Video video) {
-		var when = Date.from(
-				Instant.now().plus(5, TimeUnit.MINUTES.toChronoUnit()).atZone(ZoneId.systemDefault()).toInstant());
+	private boolean tweet(Video video) {
+		var when = Date.from(Instant.now().plus(5, TimeUnit.MINUTES.toChronoUnit()).atZone(ZoneId.systemDefault()).toInstant());
 		var client = new Twitter.Client(this.twitterClientId, this.twitterClientSecret);
 		var text = TweetTextComposer.compose(video.title(), video.videoId());
-		return this.twitterClient.scheduleTweet(client, when, this.twitterUsername, text, null);
+		return Boolean.TRUE.equals(this.twitterClient
+				.scheduleTweet(client, when, this.twitterUsername, text, null).block());
 	}
 
+	@SuppressWarnings("unchecked")
 	private static List<String> a(Object tags) {
-		if (tags instanceof List list)
-			if (!list.isEmpty())
-				if (list.getFirst() instanceof String)
-					return (List<String>) list;
-
-		if (tags instanceof String[] stringsArray)
+		if (tags instanceof List<?> list) {
+			if (!list.isEmpty() && list.get(0) instanceof String) {
+				return (List<String>) list;
+			}
+		} else if (tags instanceof String[] stringsArray) {
 			return Arrays.asList(stringsArray);
-
-		if (tags instanceof String string)
+		} else if (tags instanceof String string) {
 			return List.of(string);
-
+		}
 		return List.of();
 	}
 
@@ -167,23 +139,53 @@ class PromotionJob implements ReactiveJob<Boolean> {
 	}
 
 	private static String s(Object o) {
-		if (o instanceof String str)
+		if (o instanceof String str) {
 			return str;
-		throw new IllegalArgumentException("this isn't a valid String!");
+		}
+		throw new IllegalArgumentException("This isn't a valid String!");
 	}
 
 	private static int i(Object o) {
-		if (o instanceof Integer integer)
+		if (o instanceof Integer integer) {
 			return integer;
-		if (o instanceof Number number)
+		}
+		if (o instanceof Number number) {
 			return number.intValue();
-		throw new IllegalArgumentException("this isn't a valid int!");
+		}
+		throw new IllegalArgumentException("This isn't a valid int!");
 	}
 
+	private static class VideoRowMapper implements RowMapper<Video> {
+		
+		@Override
+		public Video mapRow(ResultSet rs, int rowNum) throws SQLException {
+			var videoId = rs.getString("video_id");
+			var title = rs.getString("title");
+			var description = rs.getString("description");
+			var publishedAt = rs.getTimestamp("published_at").toLocalDateTime();
+			var standardThumbnail = rs.getString("standard_thumbnail");
+			var tags = rs.getArray("tags").getArray();
+			var categoryId = rs.getInt("category_id");
+			var viewCount = rs.getInt("view_count");
+			var likeCount = rs.getInt("like_count");
+			var favoriteCount = rs.getInt("favorite_count");
+			var commentCount = rs.getInt("comment_count");
+
+			try {
+				return new Video(videoId, title, description,
+						Date.from(publishedAt.atZone(ZoneId.systemDefault()).toInstant()),
+						new URI(standardThumbnail).toURL(), a(tags), categoryId, viewCount, likeCount, favoriteCount,
+						commentCount, null, false);
+			}//
+			catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
 }
 
 /**
- * Handles sizing the text of the tweet up to fit in to Twitter's 280 char limitations
+ * Handles sizing the text of the tweet up to fit into Twitter's 280 char limitations
  */
 @Slf4j
 abstract class TweetTextComposer {
@@ -194,10 +196,11 @@ abstract class TweetTextComposer {
 		var url = "https://www.youtube.com/watch?v=" + videoId;
 		var ellipse = "...";
 		var full = buildFullTweetText(title, url);
-		if (full.length() <= MAX_TWEET_LENGTH)
+		if (full.length() <= MAX_TWEET_LENGTH) {
 			return full;
-		var delta = full.length() - MAX_TWEET_LENGTH;
-		var desiredWidth = title.length() - delta;
+		}
+		int delta = full.length() - MAX_TWEET_LENGTH;
+		int desiredWidth = title.length() - delta;
 		return buildFullTweetText(rTrimToSpace(title, desiredWidth - ellipse.length()) + ellipse, url);
 	}
 
@@ -207,11 +210,11 @@ abstract class TweetTextComposer {
 
 	private static String rTrimToSpace(String text, int desired) {
 		while (text.length() >= desired) {
-			var lindx = text.lastIndexOf(' ');
-			if (lindx != -1)
+			int lindx = text.lastIndexOf(' ');
+			if (lindx != -1) {
 				text = text.substring(0, lindx);
+			}
 		}
 		return text;
 	}
-
 }

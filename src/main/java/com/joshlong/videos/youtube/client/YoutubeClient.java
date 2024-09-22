@@ -1,9 +1,8 @@
 package com.joshlong.videos.youtube.client;
 
 import org.springframework.lang.Nullable;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +21,7 @@ public interface YoutubeClient {
 	 * @param username the username whose {@code uploads} playlist
 	 * @return all the {@link Video video} installments for this playlist
 	 */
-	Flux<Video> getAllVideosByUsernameUploads(String username);
+	Collection<Video> getAllVideosByUsernameUploads(String username);
 
 	/**
 	 * Returns all the videos for a given {@link Playlist}.
@@ -32,7 +31,7 @@ public interface YoutubeClient {
 	 * method will return the first page of results.
 	 * @return returns all the {@link Video}s for a given {@link Playlist}s.
 	 */
-	Mono<PlaylistVideos> getVideosByPlaylist(String playlistId, @Nullable String pageToken);
+	PlaylistVideos getVideosByPlaylist(String playlistId, @Nullable String pageToken);
 
 	/**
 	 * This hides the underlying pagination model that the YouTube API imposes, letting
@@ -44,7 +43,7 @@ public interface YoutubeClient {
 	 * @return all the videos within a playlist, hiding the underlying pagination from the
 	 * client.
 	 */
-	Flux<Video> getAllVideosByPlaylist(String playlistId);
+	Collection<Video> getAllVideosByPlaylist(String playlistId);
 
 	/**
 	 * Return the playlists
@@ -53,7 +52,7 @@ public interface YoutubeClient {
 	 * to get the next page of results.
 	 * @return all the {@link Playlist}s for a given {@link Channel}
 	 */
-	Mono<ChannelPlaylists> getPlaylistsByChannel(String channelId, String nextPageToken);
+	ChannelPlaylists getPlaylistsByChannel(String channelId, String nextPageToken);
 
 	/**
 	 * Provides all the {@link Playlist playlists} for a given {@link Channel} hiding the
@@ -61,7 +60,7 @@ public interface YoutubeClient {
 	 * @param channelId the id of the channel whose playlists we want
 	 * @return a stream of {@link Playlist}s
 	 */
-	Flux<Playlist> getAllPlaylistsByChannel(String channelId);
+	Collection<Playlist> getAllPlaylistsByChannel(String channelId);
 
 	/**
 	 * Finds a Youtube channel by the username that created it.
@@ -69,14 +68,14 @@ public interface YoutubeClient {
 	 * @return a {@link Channel channel} that contains the metadata for a given Youtube
 	 * channel
 	 */
-	Mono<Channel> getChannelByUsername(String username);
+	Channel getChannelByUsername(String username);
 
 	/**
 	 * Returns a {@code Channel channel} from the Youtube API
 	 * @param channelId this returns a {@code channelId}
 	 * @return a channel by its ID from the Youtube API
 	 */
-	Mono<Channel> getChannelById(String channelId);
+	Channel getChannelById(String channelId);
 
 	/**
 	 * This returns all the videos associated with a collection of {@link String}
@@ -85,7 +84,7 @@ public interface YoutubeClient {
 	 * {@link Map<String,Video>} results
 	 * @return a map of videoIds to {@link Video}
 	 */
-	Mono<Map<String, Video>> getVideosByIds(List<String> videoIds);
+	Map<String, Video> getVideosByIds(List<String> videoIds);
 
 	/**
 	 * This in turn delegates to {@link #getVideosByIds(List)} but for a single
@@ -93,7 +92,7 @@ public interface YoutubeClient {
 	 * @param videoId find a record by a single ID
 	 * @return {@link Video} associated with the {@link String videoId}
 	 */
-	Mono<Video> getVideoById(String videoId);
+	Video getVideoById(String videoId);
 
 	/**
 	 * Returns all the videos associated with a channel, with no indication of the
@@ -103,20 +102,20 @@ public interface YoutubeClient {
 	 * @return an aggregate type {@link ChannelVideos} containing the results and
 	 * pagination information
 	 */
-	Mono<ChannelVideos> getVideosByChannel(String channelId, String pageToken);
+	ChannelVideos getVideosByChannel(String channelId, String pageToken);
 
 	/**
 	 * Returns all the videos, regardless of the underlying pagination
 	 * @param channelId the id of the channel
 	 * @return a stream of all the {@link Video}s
 	 */
-	Flux<Video> getAllVideosByChannel(String channelId);
+	Collection<Video> getAllVideosByChannel(String channelId);
 
 	/**
 	 * Returns a {@link Playlist} by its ID from the Youtube Data API
 	 * @param playlistId the ID of the playlist to be retreived
 	 * @return a {@link Playlist playlist} whose ID matches {@code playlistId}.
 	 */
-	Mono<Playlist> getPlaylistById(String playlistId);
+	Playlist getPlaylistById(String playlistId);
 
 }

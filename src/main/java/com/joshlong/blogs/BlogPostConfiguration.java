@@ -5,8 +5,10 @@ import com.joshlong.BlogProperties;
 import com.joshlong.templates.MarkdownService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ImportRuntimeHints;
 
 @Configuration
+@ImportRuntimeHints(RomeHints.class)
 class BlogPostConfiguration {
 
 	@Bean

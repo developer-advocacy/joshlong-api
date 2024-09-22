@@ -14,6 +14,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import java.net.URI;
 import java.net.URL;
 import java.util.Collection;
 import java.util.List;
@@ -46,7 +47,7 @@ class JsonContentService implements ContentService<Collection<Content>> {
 	private URL buildUrlFrom(String url) {
 		if (null == url)
 			return null;
-		return new URL(url);
+		return URI.create(url).toURL();
 	}
 
 	@EventListener(IndexingFinishedEvent.class)

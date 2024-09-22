@@ -15,13 +15,12 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.http.HttpMethod;
-import org.springframework.web.reactive.config.CorsRegistry;
-import org.springframework.web.reactive.config.WebFluxConfigurer;
-import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -33,12 +32,6 @@ import java.util.stream.Stream;
 public class Application {
 
 	public static void main(String[] args) {
-		var environment = System.getenv();
-		var map = new HashMap<String, String>();
-		for (var k : "SPRING_R2DBC_PASSWORD,SPRING_R2DBC_URL,SPRING_R2DBC_USERNAME".split(",")) {
-			map.put(k, environment.get(k));
-		}
-		log.info("credentials: {}", map);
 		SpringApplication.run(Application.class, args);
 	}
 
@@ -56,21 +49,19 @@ public class Application {
 					BlogPostContentType.class, IndexRebuildStatus.class, Content.class, BlogPost.class, JsonNode.class)
 					.forEach(c -> hints.reflection().registerType(c, values));
 		}
-
 	}
 
 	@Bean
-	WebClient webClient(WebClient.Builder builder) {
+	RestClient restClient(RestClient.Builder builder) {
 		return builder.build();
 	}
 
 	@Bean
-	WebFluxConfigurer webFluxConfigurer(BlogProperties properties) {
-		return new WebFluxConfigurer() {
+	WebMvcConfigurer webMvcConfigurer(BlogProperties properties) {
+		return new WebMvcConfigurer() {
 
 			@Override
 			public void addCorsMappings(CorsRegistry registry) {
-
 				var hosts = new HashSet<String>();
 				for (var ch : properties.corsHosts()) {
 					if (ch.endsWith("{expand}")) {
@@ -88,6 +79,7 @@ public class Application {
 				log.info("the CORS methods are :{}", String.join(", ", methods));
 				log.info("the CORS hosts are {}", Arrays.toString(hostsArray));
 				registry.addMapping("/**").allowedOrigins(hostsArray).allowedMethods(methods).maxAge(3600);
+
 			}
 		};
 	}
