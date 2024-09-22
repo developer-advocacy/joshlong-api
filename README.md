@@ -17,6 +17,7 @@ If you want to examine what the GraphQL engine knows about your types, you might
 which will enumerate things like the types, their fields, and their fields' names. 
 
 
+
 ``` 
 {
   __schema {
