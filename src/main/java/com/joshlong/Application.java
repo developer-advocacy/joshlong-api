@@ -15,6 +15,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.http.HttpMethod;
+import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -36,6 +37,12 @@ public class Application {
 	}
 
 	@Bean
+	ApplicationRunner countingApplicationRunner(JdbcClient dbc) {
+		return args -> dbc.sql("select count(*) as c from yt_channels").query((rs, i) -> rs.getInt("c")).list()
+				.forEach(count -> System.out.println("cnt: " + count));
+	}
+
+	@Bean
 	ApplicationRunner ingestJobInitiationEventListener(ApplicationEventPublisher publisher) {
 		return e -> publisher.publishEvent(new IngestJobInitiatedEvent(Instant.now()));
 	}
@@ -49,6 +56,7 @@ public class Application {
 					BlogPostContentType.class, IndexRebuildStatus.class, Content.class, BlogPost.class, JsonNode.class)
 					.forEach(c -> hints.reflection().registerType(c, values));
 		}
+
 	}
 
 	@Bean

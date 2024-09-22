@@ -41,10 +41,7 @@ class SimpleIngestJob implements IngestJob {
 		var allPlaylists = new ArrayList<Playlist>();
 		this.resetTablesFreshStatus();
 		var channel = this.client.getChannelById(this.channelId);
-		this.client
-				.getAllVideosByChannel(channel.channelId())
-				.stream()
-				.filter(v -> !v.upcoming())
+		this.client.getAllVideosByChannel(channel.channelId()).stream().filter(v -> !v.upcoming())
 				.forEach(this::doWriteVideo);
 		var playlistsByChannel = this.client.getAllPlaylistsByChannel(channel.channelId());
 		for (var playlist : playlistsByChannel) {
@@ -62,8 +59,7 @@ class SimpleIngestJob implements IngestJob {
 	private void enrichChannels() {
 		var list = this.db//
 				.sql(" select distinct channel_id from yt_channel_videos ")//
-				.query((r, i) -> r.getString("channel_id"))
-				.list();//
+				.query((r, i) -> r.getString("channel_id")).list();//
 		var newList = new ArrayList<Channel>();
 		for (var s : list) {
 			var c = client.getChannelById(s);
@@ -73,10 +69,8 @@ class SimpleIngestJob implements IngestJob {
 	}
 
 	private void enrichPlaylists() {
-		var list = this.db
-				.sql(" select distinct playlist_id from yt_playlist_videos pv ")//
-				.query((rs, rowNum) -> rs.getString("playlist_id"))
-				.single();//
+		var list = this.db.sql(" select distinct playlist_id from yt_playlist_videos pv ")//
+				.query((rs, rowNum) -> rs.getString("playlist_id")).single();//
 		var playlist = this.client.getPlaylistById(list);
 		this.doWritePlaylist(playlist);
 	}
@@ -125,17 +119,17 @@ class SimpleIngestJob implements IngestJob {
 	}
 
 	private void doWriteVideo(Video video) {
-		
+
 		if (log.isDebugEnabled())
 			log.debug("video ({}) ({}) {} ", video.channelId(), video.videoId(), video.title());
 
 		this.db//
 				.sql("""
-				insert into yt_channel_videos(video_id, channel_id)
-				values(:vid, :cid)
-				on conflict on constraint yt_channel_videos_pkey
-				do nothing
-						""")// 
+						insert into yt_channel_videos(video_id, channel_id)
+						values(:vid, :cid)
+						on conflict on constraint yt_channel_videos_pkey
+						do nothing
+								""")//
 				.param("vid", video.videoId())//
 				.param("cid", video.channelId())//
 				.update();
@@ -201,8 +195,7 @@ class SimpleIngestJob implements IngestJob {
 				    on conflict on constraint yt_channels_pkey
 				    do update SET fresh = true where yt_channels.channel_id = :channelId
 				""";
-		this.db
-				.sql(sql)//
+		this.db.sql(sql)//
 				.param("channelId", channel.channelId())//
 				.param("description", channel.description())//
 				.param("publishedAt", channel.publishedAt())//

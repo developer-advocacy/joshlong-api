@@ -138,7 +138,8 @@ class DefaultYoutubeClient implements YoutubeClient {
 		var nextPageToken = playlistVideos.nextPageToken();
 		if (!StringUtils.hasText(nextPageToken)) {
 			return new ArrayList<>();
-		} else {
+		}
+		else {
 			return getVideosByPlaylist(playlistId, nextPageToken).videos();
 		}
 	}

@@ -32,8 +32,8 @@ class JobConfiguration {
 	}
 
 	private void doRunIngestJob(IngestJob ingest, PromotionJob promotion) {
-		for (var job : new Job<?>[]{ingest, promotion})
-			job.run();  
+		for (var job : new Job<?>[] { ingest, promotion })
+			job.run();
 	}
 
 	@Bean
@@ -66,17 +66,16 @@ class JobConfiguration {
 
 	}
 
-
 	@Bean
 	JdbcTemplate jdbcTemplate(DataSource dataSource) {
 		return new JdbcTemplate(dataSource);
 	}
+
 	@Bean
 	PromotionJob promotionJob(JdbcTemplate template, Twitter twitter, JobProperties properties) {
 		var twitterProperties = properties.twitter();
 
-		return new PromotionJob(template,
-				twitter, twitterProperties.clientId(), twitterProperties.clientSecret(),
+		return new PromotionJob(template, twitter, twitterProperties.clientId(), twitterProperties.clientSecret(),
 				twitterProperties.username(), properties.promotion().playlistIds());
 	}
 

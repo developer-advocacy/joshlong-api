@@ -23,9 +23,9 @@ import java.util.Date;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * provides details on the latest-and-greatest podcasts from 
+ * provides details on the latest-and-greatest podcasts from
  * <a href="https://api.bootifulpodcast.fm">api.bootifulpodcast.fm</a>.
- * 
+ *
  * @author Josh Long
  */
 @Slf4j
@@ -54,9 +54,7 @@ class DefaultPodcastService implements PodcastService {
 
 	@SneakyThrows
 	private URL buildUrlFrom(String url) {
-		return StringUtils.hasText(url) ?  
-				URI.create(url).toURL()  : 
-				null;
+		return StringUtils.hasText(url) ? URI.create(url).toURL() : null;
 	}
 
 	@EventListener(IndexingFinishedEvent.class)

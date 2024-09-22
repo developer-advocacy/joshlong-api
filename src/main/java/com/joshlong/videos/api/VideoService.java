@@ -8,7 +8,7 @@ import java.util.List;
  * @author Josh Long
  */
 interface VideoService {
-	
+
 	List<Playlist> playlistsByName(String name);
 
 	List<Video> videosByChannel(Channel channel);

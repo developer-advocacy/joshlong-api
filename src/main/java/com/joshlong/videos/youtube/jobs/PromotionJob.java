@@ -75,7 +75,7 @@ class PromotionJob implements Job<Boolean> {
 				)
 				""";
 
-		var count = jdbcTemplate.queryForObject(currentBatchUnPromoted, Integer.class , playlistId );
+		var count = jdbcTemplate.queryForObject(currentBatchUnPromoted, Integer.class, playlistId);
 		if (count != null && count == 0) {
 			log.info("There are 0 in-flight batch entries");
 			jdbcTemplate.update("delete from yt_promotion_batches_entries where batch_id = ?", playlistId);
@@ -84,8 +84,7 @@ class PromotionJob implements Job<Boolean> {
 		log.info("Inserting new entries");
 		jdbcTemplate.update(seed);
 
-		var videos = jdbcTemplate.query(todaysEntry,   new VideoRowMapper() ,
-				 playlistId);
+		var videos = jdbcTemplate.query(todaysEntry, new VideoRowMapper(), playlistId);
 
 		for (Video video : videos) {
 			if (tweet(video)) {
@@ -107,11 +106,12 @@ class PromotionJob implements Job<Boolean> {
 
 	@SneakyThrows
 	private boolean tweet(Video video) {
-		var when = Date.from(Instant.now().plus(5, TimeUnit.MINUTES.toChronoUnit()).atZone(ZoneId.systemDefault()).toInstant());
+		var when = Date.from(
+				Instant.now().plus(5, TimeUnit.MINUTES.toChronoUnit()).atZone(ZoneId.systemDefault()).toInstant());
 		var client = new Twitter.Client(this.twitterClientId, this.twitterClientSecret);
 		var text = TweetTextComposer.compose(video.title(), video.videoId());
-		return Boolean.TRUE.equals(this.twitterClient
-				.scheduleTweet(client, when, this.twitterUsername, text, null).block());
+		return Boolean.TRUE
+				.equals(this.twitterClient.scheduleTweet(client, when, this.twitterUsername, text, null).block());
 	}
 
 	@SuppressWarnings("unchecked")
@@ -120,9 +120,11 @@ class PromotionJob implements Job<Boolean> {
 			if (!list.isEmpty() && list.get(0) instanceof String) {
 				return (List<String>) list;
 			}
-		} else if (tags instanceof String[] stringsArray) {
+		}
+		else if (tags instanceof String[] stringsArray) {
 			return Arrays.asList(stringsArray);
-		} else if (tags instanceof String string) {
+		}
+		else if (tags instanceof String string) {
 			return List.of(string);
 		}
 		return List.of();
@@ -156,7 +158,7 @@ class PromotionJob implements Job<Boolean> {
 	}
 
 	private static class VideoRowMapper implements RowMapper<Video> {
-		
+
 		@Override
 		public Video mapRow(ResultSet rs, int rowNum) throws SQLException {
 			var videoId = rs.getString("video_id");
@@ -176,12 +178,14 @@ class PromotionJob implements Job<Boolean> {
 						Date.from(publishedAt.atZone(ZoneId.systemDefault()).toInstant()),
 						new URI(standardThumbnail).toURL(), a(tags), categoryId, viewCount, likeCount, favoriteCount,
 						commentCount, null, false);
-			}//
+			} //
 			catch (Exception e) {
 				throw new RuntimeException(e);
 			}
 		}
+
 	}
+
 }
 
 /**
@@ -217,4 +221,5 @@ abstract class TweetTextComposer {
 		}
 		return text;
 	}
+
 }

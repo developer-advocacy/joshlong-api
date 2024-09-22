@@ -20,47 +20,48 @@ import java.util.Properties;
 
 /**
  * registers hints for ATOM/RSS feed library ATOM.
- * 
- * @author Josh Long 
+ *
+ * @author Josh Long
  */
 class RomeHints implements RuntimeHintsRegistrar {
 
-    public void registerHints(RuntimeHints hints, ClassLoader classLoader)  {
-        
-        if (ClassUtils.isPresent("com.rometools.rome.feed.WireFeed" , getClass().getClassLoader()) ) {
-            
-            var mcs = MemberCategory.values();
-            
-            var reflections = new Reflections("com.rometools.rome");
-            reflections.getSubTypesOf(Serializable.class).forEach((cx) -> {
-                hints.reflection().registerType(cx, mcs);
-            });
-            
-            for (var c : new Class[]{Date.class, SyndEntry.class, DCModuleImpl.class}) {
-                hints.reflection().registerType(c, mcs);
-            }
-            
-            var resource = new ClassPathResource("/com/rometools/rome/rome.properties");
-            hints.resources().registerResource(resource);
+	public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
 
-            try (var in = resource.getInputStream()) {
-                var props = new Properties();
-                props.load(in);
-                props.propertyNames().asIterator().forEachRemaining((pn) ->
-                        loadClasses((String) pn, props.getProperty((String) pn)).forEach((cn) -> {
-                            hints.reflection().registerType(TypeReference.of(cn), mcs);
-                        }));
-            }// 
-            catch (Exception ex) {
-                LoggerFactory.getLogger(getClass()).warn("got an exception loading the hints for ROME");
-            }
-        }
-    }
+		if (ClassUtils.isPresent("com.rometools.rome.feed.WireFeed", getClass().getClassLoader())) {
 
-    private static List<String> loadClasses(String propertyName, String propertyValue) {
-        Assert.hasText(propertyName, "the propertyName must not be null");
-        Assert.hasText(propertyValue, "the propertyValue must not be null");
-        return Arrays.stream(propertyValue.contains(" ") ? propertyValue.split(" ") : new String[]{propertyValue})
-                .map(String::trim).filter((xValue) -> !xValue.strip().equals("")).toList();
-    }
+			var mcs = MemberCategory.values();
+
+			var reflections = new Reflections("com.rometools.rome");
+			reflections.getSubTypesOf(Serializable.class).forEach((cx) -> {
+				hints.reflection().registerType(cx, mcs);
+			});
+
+			for (var c : new Class[] { Date.class, SyndEntry.class, DCModuleImpl.class }) {
+				hints.reflection().registerType(c, mcs);
+			}
+
+			var resource = new ClassPathResource("/com/rometools/rome/rome.properties");
+			hints.resources().registerResource(resource);
+
+			try (var in = resource.getInputStream()) {
+				var props = new Properties();
+				props.load(in);
+				props.propertyNames().asIterator().forEachRemaining(
+						(pn) -> loadClasses((String) pn, props.getProperty((String) pn)).forEach((cn) -> {
+							hints.reflection().registerType(TypeReference.of(cn), mcs);
+						}));
+			} //
+			catch (Exception ex) {
+				LoggerFactory.getLogger(getClass()).warn("got an exception loading the hints for ROME");
+			}
+		}
+	}
+
+	private static List<String> loadClasses(String propertyName, String propertyValue) {
+		Assert.hasText(propertyName, "the propertyName must not be null");
+		Assert.hasText(propertyValue, "the propertyValue must not be null");
+		return Arrays.stream(propertyValue.contains(" ") ? propertyValue.split(" ") : new String[] { propertyValue })
+				.map(String::trim).filter((xValue) -> !xValue.strip().equals("")).toList();
+	}
+
 }

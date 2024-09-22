@@ -52,14 +52,12 @@ class VideoGraphqlController {
 		if (springTips.isEmpty()) {
 			return new ArrayList<>();
 		}
-		return this.videoService
-				.videosByPlaylist(springTips.getFirst());
+		return this.videoService.videosByPlaylist(springTips.getFirst());
 	}
 
 	@QueryMapping
-	Collection <Video> coffeesoftwareVideos() {
-		return this.videoService.videosByChannel(
-				this.videoService.channelById(this.ids.get("coffeesoftware")));
+	Collection<Video> coffeesoftwareVideos() {
+		return this.videoService.videosByChannel(this.videoService.channelById(this.ids.get("coffeesoftware")));
 	}
 
 }
