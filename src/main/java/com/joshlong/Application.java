@@ -33,6 +33,9 @@ import java.util.stream.Stream;
 public class Application {
 
 	public static void main(String[] args) {
+		for (var e : new String[] { "SPRING_DATASOURCE_USERNAME", "SPRING_DATASOURCE_PASSWORD",
+				"SPRING_DATASOURCE_URL" })
+			System.out.println(e + ":" + System.getenv(e));
 		SpringApplication.run(Application.class, args);
 	}
 
