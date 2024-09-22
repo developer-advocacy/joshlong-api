@@ -15,6 +15,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.http.HttpMethod;
+import org.springframework.r2dbc.core.DatabaseClient;
 import org.springframework.web.reactive.config.CorsRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -40,6 +41,12 @@ public class Application {
 		}
 		log.info("credentials: {}", map);
 		SpringApplication.run(Application.class, args);
+	}
+
+	@Bean
+	ApplicationRunner countingApplicationRunner(DatabaseClient dbc) {
+		return args -> dbc.sql("select count(*) as c from yt_channels").fetch().all().map(row -> (Number) row.get("c"))
+				.subscribe(count -> System.out.println("cnt: " + count));
 	}
 
 	@Bean
