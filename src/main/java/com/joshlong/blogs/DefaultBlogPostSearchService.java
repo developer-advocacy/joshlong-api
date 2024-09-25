@@ -2,7 +2,8 @@ package com.joshlong.blogs;
 
 import com.joshlong.*;
 import com.joshlong.index.IndexingFinishedEvent;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.graphql.data.method.annotation.Argument;
@@ -20,8 +21,9 @@ import java.util.stream.Stream;
  * Provides finder-methods to search the content in the {@link IndexService}
  */
 @Service
-@Slf4j
 class DefaultBlogPostSearchService implements BlogPostSearchService {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final List<BlogPost> postsOrderedNewestToOldest = new CopyOnWriteArrayList<>();
 

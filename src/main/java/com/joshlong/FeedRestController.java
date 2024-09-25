@@ -1,10 +1,10 @@
 package com.joshlong;
 
 import com.rometools.rome.feed.synd.*;
+import com.rometools.rome.io.FeedException;
 import com.rometools.rome.io.SyndFeedOutput;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -22,11 +22,11 @@ import java.util.function.Function;
  * Produces an RSS feed of all the blogs
  */
 
-@Slf4j
 @Controller
 @ResponseBody
-@RequiredArgsConstructor
 class FeedRestController {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final Feeds feeds;
 
@@ -35,6 +35,11 @@ class FeedRestController {
 	private final AtomicReference<String> renderedXml = new AtomicReference<>();
 
 	private final BlogProperties properties;
+
+	FeedRestController(Feeds feeds, BlogProperties properties) {
+		this.feeds = feeds;
+		this.properties = properties;
+	}
 
 	@EventListener
 	public void blogPostsUpdatedEvent(BlogPostsOrderedEvent updatedEvent) throws Exception {
@@ -89,10 +94,15 @@ class BlogPostSyndEntryConvertor implements Function<BlogPost, SyndEntry> {
 @Component
 class Feeds {
 
-	@SneakyThrows
 	String render(SyndFeed feed) {
-		var output = new SyndFeedOutput();
-		return output.outputString(feed);
+		try {
+			var output = new SyndFeedOutput();
+
+			return output.outputString(feed);
+		}
+		catch (FeedException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	SyndFeed buildFeed(String feedType, String title, String link, String description, List<SyndEntry> posts) {

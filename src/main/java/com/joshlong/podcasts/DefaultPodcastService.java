@@ -8,8 +8,9 @@ import com.joshlong.Podcast;
 import com.joshlong.PodcastService;
 import com.joshlong.index.IndexingFinishedEvent;
 import com.joshlong.utils.JsonUtils;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import com.joshlong.utils.UrlUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.util.StringUtils;
 
@@ -28,8 +29,9 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Josh Long
  */
-@Slf4j
 class DefaultPodcastService implements PodcastService {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final URL uri;
 
@@ -52,9 +54,8 @@ class DefaultPodcastService implements PodcastService {
 		return this.podcasts;
 	}
 
-	@SneakyThrows
 	private URL buildUrlFrom(String url) {
-		return StringUtils.hasText(url) ? URI.create(url).toURL() : null;
+		return StringUtils.hasText(url) ? UrlUtils.url(url) : null;
 	}
 
 	@EventListener(IndexingFinishedEvent.class)

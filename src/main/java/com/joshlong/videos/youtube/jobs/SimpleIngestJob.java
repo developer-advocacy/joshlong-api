@@ -4,17 +4,16 @@ import com.joshlong.videos.youtube.client.Channel;
 import com.joshlong.videos.youtube.client.Playlist;
 import com.joshlong.videos.youtube.client.Video;
 import com.joshlong.videos.youtube.client.YoutubeClient;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
 import java.util.ArrayList;
 import java.util.Collection;
 
-@Slf4j
-@RequiredArgsConstructor
 class SimpleIngestJob implements IngestJob {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final YoutubeClient client;
 
@@ -22,12 +21,17 @@ class SimpleIngestJob implements IngestJob {
 
 	private final String channelId;
 
+	SimpleIngestJob(YoutubeClient client, JdbcClient db, String channelId) {
+		this.client = client;
+		this.db = db;
+		this.channelId = channelId;
+	}
+
 	@Override
-	@SneakyThrows
 	public Collection<Playlist> run() {
-		log.info("=======================================================");
-		log.info("INGEST (" + this.channelId + ")");
-		log.info("=======================================================");
+		log.debug("=======================================================");
+		log.debug("INGEST ({})", this.channelId);
+		log.debug("=======================================================");
 		// 0. reset all the flush states
 		// 1. get all the playlists for the main channel
 		// 2. for each playlist's videos, write the (video and playlist) into its join
@@ -187,7 +191,6 @@ class SimpleIngestJob implements IngestJob {
 
 	}
 
-	@SneakyThrows
 	private void doWriteChannel(Channel channel) {
 		var sql = """
 				    insert into yt_channels(channel_id, description, published_at, title, fresh)
@@ -201,7 +204,6 @@ class SimpleIngestJob implements IngestJob {
 				.param("publishedAt", channel.publishedAt())//
 				.param("title", channel.title())//
 				.update();
-
 	}
 
 	private void resetTablesFreshStatus() {

@@ -5,7 +5,8 @@ import com.joshlong.BlogPost;
 import com.joshlong.BlogProperties;
 import com.joshlong.IndexService;
 import com.joshlong.index.IndexingFinishedEvent;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
@@ -18,9 +19,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
-@Slf4j
 @Configuration
 class ContentConfiguration {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final ObjectMapper objectMapper;
 
@@ -74,9 +76,11 @@ class ContentConfiguration {
 /**
  * given an HTML key, we need to load the content for a blog post here
  */
-@Slf4j
+
 @Component
 class BlogIndexContentResolver implements Function<String, String> {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final AtomicReference<Map<String, BlogPost>> reference = new AtomicReference<>();
 

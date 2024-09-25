@@ -5,7 +5,8 @@ import com.joshlong.videos.JobProperties;
 import com.joshlong.videos.youtube.IngestJobInitiatedEvent;
 import com.joshlong.videos.youtube.client.Playlist;
 import com.joshlong.videos.youtube.client.YoutubeClient;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,9 +17,10 @@ import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.Collection;
 
-@Slf4j
 @Configuration
 class JobConfiguration {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	@Bean
 	ApplicationListener<IngestJobInitiatedEvent> jobListener(JobProperties properties, IngestJob ingest,

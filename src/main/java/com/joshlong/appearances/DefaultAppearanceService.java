@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.joshlong.Appearance;
 import com.joshlong.AppearanceService;
 import com.joshlong.index.IndexingFinishedEvent;
-import lombok.SneakyThrows;
 import org.springframework.context.event.EventListener;
 import org.springframework.util.StringUtils;
 
@@ -68,7 +67,6 @@ class DefaultAppearanceService implements AppearanceService {
 		return Date.from(localDate.atStartOfDay(this.defaultZoneId).toInstant());
 	}
 
-	@SneakyThrows
 	private Appearance buildAppearanceFrom(JsonNode json) {
 		var startDate = json.get("start_date");
 		var endDate = json.get("end_date");

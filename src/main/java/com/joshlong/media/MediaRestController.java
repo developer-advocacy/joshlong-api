@@ -1,6 +1,7 @@
 package com.joshlong.media;
 
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -16,10 +17,11 @@ import java.io.File;
 /**
  * Serves media from the Github clone
  */
-@Slf4j
 @Controller
 @ResponseBody
 class MediaRestController {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private static final String MEDIA_URI_PREFIX = "/media";
 
@@ -44,7 +46,7 @@ class MediaRestController {
 					.build();
 		} //
 		else {
-			log.debug("reading media file " + file.getAbsolutePath());
+			log.debug("reading media file {}", file.getAbsolutePath());
 			var resource = new FileSystemResource(file);
 			return ResponseEntity.ok() //
 					.contentType(MediaType.IMAGE_JPEG) //

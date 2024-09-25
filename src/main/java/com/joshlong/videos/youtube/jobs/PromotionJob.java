@@ -1,10 +1,10 @@
 package com.joshlong.videos.youtube.jobs;
 
 import com.joshlong.twitter.Twitter;
+import com.joshlong.utils.UrlUtils;
 import com.joshlong.videos.youtube.client.Video;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-@Slf4j
-@RequiredArgsConstructor
 class PromotionJob implements Job<Boolean> {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final JdbcTemplate jdbcTemplate;
 
@@ -33,6 +33,16 @@ class PromotionJob implements Job<Boolean> {
 	private final String twitterUsername;
 
 	private final String[] playlistIds;
+
+	PromotionJob(JdbcTemplate jdbcTemplate, Twitter twitterClient, String twitterClientId, String twitterClientSecret,
+			String twitterUsername, String[] playlistIds) {
+		this.jdbcTemplate = jdbcTemplate;
+		this.twitterClient = twitterClient;
+		this.twitterClientId = twitterClientId;
+		this.twitterClientSecret = twitterClientSecret;
+		this.twitterUsername = twitterUsername;
+		this.playlistIds = playlistIds;
+	}
 
 	@Override
 	public Boolean run() {
@@ -104,7 +114,6 @@ class PromotionJob implements Job<Boolean> {
 		}
 	}
 
-	@SneakyThrows
 	private boolean tweet(Video video) {
 		var when = Date.from(
 				Instant.now().plus(5, TimeUnit.MINUTES.toChronoUnit()).atZone(ZoneId.systemDefault()).toInstant());
@@ -130,12 +139,11 @@ class PromotionJob implements Job<Boolean> {
 		return List.of();
 	}
 
-	@SneakyThrows
 	private Video videoFor(Map<String, Object> rs) {
 		var videoId = (String) rs.get("video_id");
 		return new Video(videoId, s(rs.get("title")), s(rs.get("description")),
 				Date.from(((LocalDateTime) rs.get("published_at")).atZone(ZoneId.systemDefault()).toInstant()),
-				new URI(s(rs.get("standard_thumbnail"))).toURL(), a(rs.get("tags")), i(rs.get("category_id")),
+				UrlUtils.url(s(rs.get("standard_thumbnail"))), a(rs.get("tags")), i(rs.get("category_id")),
 				i(rs.get("view_count")), i(rs.get("like_count")), i(rs.get("favorite_count")),
 				i(rs.get("comment_count")), null, false);
 	}
@@ -191,7 +199,6 @@ class PromotionJob implements Job<Boolean> {
 /**
  * Handles sizing the text of the tweet up to fit into Twitter's 280 char limitations
  */
-@Slf4j
 abstract class TweetTextComposer {
 
 	public static final int MAX_TWEET_LENGTH = 280;

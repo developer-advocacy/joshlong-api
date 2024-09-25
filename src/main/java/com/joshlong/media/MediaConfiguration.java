@@ -1,13 +1,11 @@
 package com.joshlong.media;
 
 import com.joshlong.BlogProperties;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.io.File;
 
-@Slf4j
 @Configuration
 class MediaConfiguration {
 
