@@ -24,7 +24,7 @@ class IngestJob implements Job {
 		this.client = client;
 		this.db = db;
 		this.channelId = channelId;
-		this.log.info("{} for channelId {} has been created.", getClass().getName(), this.channelId);
+		this.log.info("creating {} for channelId {} has been created.", getClass().getName(), this.channelId);
 	}
 
 	@Override
@@ -73,10 +73,8 @@ class IngestJob implements Job {
 	}
 
 	private void enrichPlaylists() {
-		var playlistIds = this.db
-				.sql(" select distinct playlist_id from yt_playlist_videos pv ")//
-				.query((rs, rowNum) -> rs.getString("playlist_id"))
-				.list();//
+		var playlistIds = this.db.sql(" select distinct playlist_id from yt_playlist_videos pv ")//
+				.query((rs, rowNum) -> rs.getString("playlist_id")).list();//
 		for (var playlistId : playlistIds) {
 			this.doWritePlaylist(this.client.getPlaylistById(playlistId));
 		}
@@ -84,14 +82,14 @@ class IngestJob implements Job {
 
 	private void doWritePlaylistsVideos(Channel channel, Playlist playlist, Video video) {
 		this.db.sql("""
-						insert into yt_playlist_videos(
-						    video_id,
-						    playlist_id
-						)
-						values( :videoId, :playlistId )
-						on conflict on constraint yt_playlist_videos_pkey
-						do nothing
-						""")//
+				insert into yt_playlist_videos(
+				    video_id,
+				    playlist_id
+				)
+				values( :videoId, :playlistId )
+				on conflict on constraint yt_playlist_videos_pkey
+				do nothing
+				""")//
 				.param("videoId", video.videoId())//
 				.param("playlistId", playlist.playlistId())//
 				.update();
@@ -142,44 +140,43 @@ class IngestJob implements Job {
 				.update();
 
 		this.db//
-				.sql(
-						"""
-									  insert into yt_videos (
-										video_id ,
-										title,
-										description,
-										published_at ,
-										standard_thumbnail,
-										category_id,
-										view_count,
-										favorite_count,
-										comment_count  ,
-										like_count ,
-										fresh,
-										tags
-									  )
-									  values (
-									   :videoId,  :title,  :description, :publishedAt,
-									   :standardThumbnail,  :categoryId,  :viewCount,
-									   :favoriteCount, :commentCount, :likeCount , true,   :tags
-									  )
-									  on conflict on CONSTRAINT yt_videos_pkey
-									  do update set
-									   fresh = true,
-									   video_id  = excluded.video_id,
-									   title = excluded.title,
-									   description = excluded.description,
-									   published_at  = excluded.published_at,
-									   standard_thumbnail = excluded.standard_thumbnail,
-									   category_id = excluded.category_id,
-									   view_count = excluded.view_count,
-									   favorite_count = excluded.favorite_count,
-									   comment_count  = excluded.comment_count,
-									   like_count =  excluded.like_count ,
-									   tags = excluded.tags
-									where
-									   yt_videos.video_id =  :videoId
-								""")//
+				.sql("""
+							  insert into yt_videos (
+								video_id ,
+								title,
+								description,
+								published_at ,
+								standard_thumbnail,
+								category_id,
+								view_count,
+								favorite_count,
+								comment_count  ,
+								like_count ,
+								fresh,
+								tags
+							  )
+							  values (
+							   :videoId,  :title,  :description, :publishedAt,
+							   :standardThumbnail,  :categoryId,  :viewCount,
+							   :favoriteCount, :commentCount, :likeCount , true,   :tags
+							  )
+							  on conflict on CONSTRAINT yt_videos_pkey
+							  do update set
+							   fresh = true,
+							   video_id  = excluded.video_id,
+							   title = excluded.title,
+							   description = excluded.description,
+							   published_at  = excluded.published_at,
+							   standard_thumbnail = excluded.standard_thumbnail,
+							   category_id = excluded.category_id,
+							   view_count = excluded.view_count,
+							   favorite_count = excluded.favorite_count,
+							   comment_count  = excluded.comment_count,
+							   like_count =  excluded.like_count ,
+							   tags = excluded.tags
+							where
+							   yt_videos.video_id =  :videoId
+						""")//
 				.param("videoId", video.videoId())//
 				.param("title", video.title()) //
 				.param("description", video.description())//

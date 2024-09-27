@@ -19,24 +19,21 @@ class JobConfiguration {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-
 	@Bean
-	ApplicationListener<IngestJobInitiatedEvent> jobListener(
-			JobProperties properties,
-			CompositeIngestJob compositeIngestJob,
-			PromotionJob promotion) {
+	ApplicationListener<IngestJobInitiatedEvent> jobListener(JobProperties properties,
+			CompositeIngestJob compositeIngestJob, PromotionJob promotion) {
 		return event -> {
 			if (properties.batch().run()) {
 				try {
-					for (var job : new Job[]{compositeIngestJob, promotion})
+					for (var job : new Job[] { compositeIngestJob, promotion })
 						job.run();
-				} //  
+				} //
 				catch (Exception e) {
 					throw new RuntimeException(e);
 				}
 			}
 			else
-				log.info("not running batch ingest and promotion job because bootiful.batch.run=false");
+				this.log.info("not running batch ingest and promotion job because bootiful.batch.run=false");
 		};
 	}
 
@@ -50,15 +47,20 @@ class JobConfiguration {
 		return new CompositeIngestJob(compositeList);
 	}
 
-	private record CompositeIngestJob(Job[] jobs) implements Job {
-		
+	static class CompositeIngestJob implements Job {
+
+		private final Job[] jobs;
+
+		CompositeIngestJob(Job[] jobs) {
+			this.jobs = jobs;
+		}
+
 		@Override
 		public void run() throws Exception {
-
 			for (var job : this.jobs)
 				job.run();
-			
 		}
+
 	}
 
 	@Bean

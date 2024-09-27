@@ -10,6 +10,8 @@ import org.apache.lucene.index.Term;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.jsoup.Jsoup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -21,16 +23,17 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.DateFormat;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 class DefaultIndexService implements IndexService {
 
-	private final static Log log = LogFactory.getLog(DefaultIndexService.class);
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final DateFormat simpleDateFormat;
 
@@ -68,13 +71,13 @@ class DefaultIndexService implements IndexService {
 
 	private void ensureClonedRepository() throws GitAPIException {
 
-		log.info("should reset Git clone? " + this.resetOnRebuild);
+		log.info("should reset Git clone? {}", this.resetOnRebuild);
 
 		if (!this.resetOnRebuild)
 			return;
 
 		if (this.root.exists() && this.root.isDirectory()) {
-			log.info("deleting " + this.root.getAbsolutePath() + '.');
+			log.info("deleting {}.", this.root.getAbsolutePath());
 			FileSystemUtils.deleteRecursively(this.root);
 		}
 
@@ -83,13 +86,13 @@ class DefaultIndexService implements IndexService {
 
 		try (var git = new Git(repo)) {
 			var status = git.status().call();
-			log.info("the status is " + status.toString());
+			this.log.info("the status is {}", status.toString());
 		}
 	}
 
 	@Override
 	public IndexRebuildStatus rebuildIndex() throws Exception {
-		log.info("refreshing " + IndexService.class.getName());
+		this.log.info("refreshing {}", IndexService.class.getName());
 		Assert.notNull(this.root, () -> "you must specify a valid root ");
 		this.publisher.publishEvent(new IndexingStartedEvent(new Date()));
 		this.ensureClonedRepository();
@@ -120,13 +123,13 @@ class DefaultIndexService implements IndexService {
 				.sorted(Comparator.comparing(BlogPost::date).reversed()) //
 				.filter(bp -> listedOnly && bp.listed()).toList();
 		var returningList = results.subList(offset, Math.min(results.size(), offset + pageSize));
-		log.info("search('" + query + "'," + offset + "," + pageSize + "," + listedOnly + ")");
+		log.info("search('{}',{},{},{})", query, offset, pageSize, listedOnly);
 		return new BlogPostSearchResults(results.size(), offset, pageSize, returningList);
 	}
 
 	private List<String> searchIndex(String queryStr, int maxResults) {
 		var list = this.luceneTemplate.search(queryStr, maxResults, document -> document.get("path"));
-		log.info("the result is " + list.size());
+		log.info("the result is {}", list.size());
 		return list;
 	}
 
@@ -139,17 +142,22 @@ class DefaultIndexService implements IndexService {
 	}
 
 	private Map<String, BlogPost> buildIndex() throws IOException {
-		log.debug("building index @ " + Instant.now() + '.');
+		log.debug("building index @ {}.", Instant.now());
 		var contentDirectory = new File(this.root, "content");
-		var mapOfContent = Files.walk(contentDirectory.toPath()) //
-				.parallel() //
-				.map(Path::toFile) //
-				.filter(this::isValidFile) //
-				.map(file -> {
-					var blogPost = this.blogPostService.buildBlogPostFrom(computePath(file, contentDirectory), file);
-					return new DefaultIndexService.BlogPostKey(blogPost.path(), blogPost);
-				}).collect(Collectors.toMap(DefaultIndexService.BlogPostKey::path,
-						DefaultIndexService.BlogPostKey::blogPost));
+		var mapOfContent = new ConcurrentHashMap<String, BlogPost>();
+		var executor = Executors.newVirtualThreadPerTaskExecutor();
+		var files = new ArrayList<CompletableFuture<?>>();
+		for (var path : Files.walk(contentDirectory.toPath()).collect(Collectors.toSet())) {
+			var file = path.toFile();
+			if (this.isValidFile(file)) {
+				files.add(CompletableFuture.runAsync(() -> {
+					var blogPost = blogPostService.buildBlogPostFrom(computePath(file, contentDirectory), file);
+					mapOfContent.put(blogPost.path(), blogPost);
+				}, executor));
+			}
+		}
+		CompletableFuture.allOf(files.toArray(new CompletableFuture[0])).join();
+		this.log.info("ran the index for all the files of size {}", mapOfContent.size());
 		this.luceneTemplate.write(mapOfContent.entrySet(), entry -> {
 			var path = entry.getKey();
 			var blogPost = entry.getValue();
@@ -201,9 +209,6 @@ class DefaultIndexService implements IndexService {
 		if (event instanceof SiteUpdatedEvent || event instanceof ApplicationReadyEvent) {
 			this.rebuildIndex();
 		}
-	}
-
-	private record BlogPostKey(String path, BlogPost blogPost) {
 	}
 
 }
