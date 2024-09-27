@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-class PromotionJob implements Job<Boolean> {
+class PromotionJob implements Job {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -45,12 +45,11 @@ class PromotionJob implements Job<Boolean> {
 	}
 
 	@Override
-	public Boolean run() {
+	public void run() throws Exception {
 		log.info("=======================================================");
 		log.info("PROMOTE");
 		log.info("=======================================================");
-		promotePlaylist(this.playlistIds[0]);
-		return true;
+		this.promotePlaylist(this.playlistIds[0]);
 	}
 
 	private void promotePlaylist(String playlistId) {
@@ -85,20 +84,20 @@ class PromotionJob implements Job<Boolean> {
 				)
 				""";
 
-		var count = jdbcTemplate.queryForObject(currentBatchUnPromoted, Integer.class, playlistId);
+		var count = this.jdbcTemplate.queryForObject(currentBatchUnPromoted, Integer.class, playlistId);
 		if (count != null && count == 0) {
-			log.info("There are 0 in-flight batch entries");
-			jdbcTemplate.update("delete from yt_promotion_batches_entries where batch_id = ?", playlistId);
+			this.log.info("There are 0 in-flight batch entries");
+			this.jdbcTemplate.update("delete from yt_promotion_batches_entries where batch_id = ?", playlistId);
 		}
 
 		log.info("Inserting new entries");
-		jdbcTemplate.update(seed);
+		this.jdbcTemplate.update(seed);
 
-		var videos = jdbcTemplate.query(todaysEntry, new VideoRowMapper(), playlistId);
+		var videos = this.jdbcTemplate.query(todaysEntry, new VideoRowMapper(), playlistId);
 
 		for (Video video : videos) {
 			if (tweet(video)) {
-				log.info("Marking as tweeted");
+				this.log.info("Marking as tweeted");
 				String sql = """
 						update yt_promotion_batches_entries
 						set promoted = NOW()::date
@@ -109,7 +108,7 @@ class PromotionJob implements Job<Boolean> {
 						and
 						    scheduled = NOW()::date
 						""";
-				jdbcTemplate.update(sql, playlistId);
+				this.jdbcTemplate.update(sql, playlistId);
 			}
 		}
 	}
@@ -126,7 +125,7 @@ class PromotionJob implements Job<Boolean> {
 	@SuppressWarnings("unchecked")
 	private static List<String> a(Object tags) {
 		if (tags instanceof List<?> list) {
-			if (!list.isEmpty() && list.get(0) instanceof String) {
+			if (!list.isEmpty() && list.getFirst() instanceof String) {
 				return (List<String>) list;
 			}
 		}
@@ -139,6 +138,7 @@ class PromotionJob implements Job<Boolean> {
 		return List.of();
 	}
 
+	// todo figure out where this is used.
 	private Video videoFor(Map<String, Object> rs) {
 		var videoId = (String) rs.get("video_id");
 		return new Video(videoId, s(rs.get("title")), s(rs.get("description")),

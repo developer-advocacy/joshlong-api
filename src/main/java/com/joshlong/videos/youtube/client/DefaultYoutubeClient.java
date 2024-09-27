@@ -139,7 +139,7 @@ class DefaultYoutubeClient implements YoutubeClient {
 			return new ArrayList<>();
 		}
 		else {
-			return getVideosByPlaylist(playlistId, nextPageToken).videos();
+			return this.getVideosByPlaylist(playlistId, nextPageToken).videos();
 		}
 	}
 

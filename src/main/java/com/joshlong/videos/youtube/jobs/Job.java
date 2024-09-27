@@ -1,7 +1,8 @@
 package com.joshlong.videos.youtube.jobs;
 
-interface Job<T> {
 
-	T run();
+interface Job {
+	
+	void run() throws Exception;
 
 }
