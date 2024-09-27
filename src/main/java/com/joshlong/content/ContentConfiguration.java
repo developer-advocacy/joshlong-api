@@ -76,7 +76,6 @@ class ContentConfiguration {
 /**
  * given an HTML key, we need to load the content for a blog post here
  */
-
 @Component
 class BlogIndexContentResolver implements Function<String, String> {
 
@@ -89,8 +88,8 @@ class BlogIndexContentResolver implements Function<String, String> {
 		var posts = event.getSource();
 		var index = posts.index();
 		this.reference.set(index);
-		if (log.isDebugEnabled())
-			index.forEach((k, v) -> log.debug(k + "=" + v.path()));
+		if (this.log.isDebugEnabled())
+			index.forEach((k, v) -> this.log.debug("{}={}", k, v.path()));
 	}
 
 	@Override
