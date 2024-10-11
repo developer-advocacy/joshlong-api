@@ -59,6 +59,8 @@ public class Application {
 		return builder.build();
 	}
 
+	// todo could we introduce a gateway and remove this code and other cors handling
+	// nonsense?
 	@Bean
 	WebMvcConfigurer webMvcConfigurer(BlogProperties properties) {
 		return new WebMvcConfigurer() {
