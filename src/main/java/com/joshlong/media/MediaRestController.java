@@ -32,8 +32,7 @@ class MediaRestController {
 
 	MediaRestController(File root) {
 		this.mediaRoot = root;
-		log.debug(
-				"creating " + MediaRestController.class.getName() + " with media directory " + root.getAbsolutePath());
+		log.debug("creating {} with media directory {}", MediaRestController.class.getName(), root.getAbsolutePath());
 	}
 
 	@GetMapping(MEDIA_URI)
