@@ -3,7 +3,8 @@ package com.joshlong;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.joshlong.videos.JobProperties;
 import com.joshlong.videos.youtube.IngestJobInitiatedEvent;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
@@ -25,11 +26,12 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
-@Slf4j
 @SpringBootApplication
 @ImportRuntimeHints(Application.Hints.class)
 @EnableConfigurationProperties({ JobProperties.class, BlogProperties.class })
 public class Application {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);

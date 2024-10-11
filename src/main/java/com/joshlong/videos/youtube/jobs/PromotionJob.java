@@ -1,10 +1,10 @@
 package com.joshlong.videos.youtube.jobs;
 
 import com.joshlong.twitter.Twitter;
+import com.joshlong.utils.UrlUtils;
 import com.joshlong.videos.youtube.client.Video;
-import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
@@ -20,9 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-@Slf4j
-@RequiredArgsConstructor
-class PromotionJob implements Job<Boolean> {
+class PromotionJob implements Job {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final JdbcTemplate jdbcTemplate;
 
@@ -34,13 +34,22 @@ class PromotionJob implements Job<Boolean> {
 
 	private final String[] playlistIds;
 
+	PromotionJob(JdbcTemplate jdbcTemplate, Twitter twitterClient, String twitterClientId, String twitterClientSecret,
+			String twitterUsername, String[] playlistIds) {
+		this.jdbcTemplate = jdbcTemplate;
+		this.twitterClient = twitterClient;
+		this.twitterClientId = twitterClientId;
+		this.twitterClientSecret = twitterClientSecret;
+		this.twitterUsername = twitterUsername;
+		this.playlistIds = playlistIds;
+	}
+
 	@Override
-	public Boolean run() {
+	public void run() throws Exception {
 		log.info("=======================================================");
 		log.info("PROMOTE");
 		log.info("=======================================================");
-		promotePlaylist(this.playlistIds[0]);
-		return true;
+		this.promotePlaylist(this.playlistIds[0]);
 	}
 
 	private void promotePlaylist(String playlistId) {
@@ -75,20 +84,20 @@ class PromotionJob implements Job<Boolean> {
 				)
 				""";
 
-		var count = jdbcTemplate.queryForObject(currentBatchUnPromoted, Integer.class, playlistId);
+		var count = this.jdbcTemplate.queryForObject(currentBatchUnPromoted, Integer.class, playlistId);
 		if (count != null && count == 0) {
-			log.info("There are 0 in-flight batch entries");
-			jdbcTemplate.update("delete from yt_promotion_batches_entries where batch_id = ?", playlistId);
+			this.log.info("There are 0 in-flight batch entries");
+			this.jdbcTemplate.update("delete from yt_promotion_batches_entries where batch_id = ?", playlistId);
 		}
 
 		log.info("Inserting new entries");
-		jdbcTemplate.update(seed);
+		this.jdbcTemplate.update(seed);
 
-		var videos = jdbcTemplate.query(todaysEntry, new VideoRowMapper(), playlistId);
+		var videos = this.jdbcTemplate.query(todaysEntry, new VideoRowMapper(), playlistId);
 
 		for (Video video : videos) {
 			if (tweet(video)) {
-				log.info("Marking as tweeted");
+				this.log.info("Marking as tweeted");
 				String sql = """
 						update yt_promotion_batches_entries
 						set promoted = NOW()::date
@@ -99,12 +108,11 @@ class PromotionJob implements Job<Boolean> {
 						and
 						    scheduled = NOW()::date
 						""";
-				jdbcTemplate.update(sql, playlistId);
+				this.jdbcTemplate.update(sql, playlistId);
 			}
 		}
 	}
 
-	@SneakyThrows
 	private boolean tweet(Video video) {
 		var when = Date.from(
 				Instant.now().plus(5, TimeUnit.MINUTES.toChronoUnit()).atZone(ZoneId.systemDefault()).toInstant());
@@ -117,7 +125,7 @@ class PromotionJob implements Job<Boolean> {
 	@SuppressWarnings("unchecked")
 	private static List<String> a(Object tags) {
 		if (tags instanceof List<?> list) {
-			if (!list.isEmpty() && list.get(0) instanceof String) {
+			if (!list.isEmpty() && list.getFirst() instanceof String) {
 				return (List<String>) list;
 			}
 		}
@@ -130,12 +138,12 @@ class PromotionJob implements Job<Boolean> {
 		return List.of();
 	}
 
-	@SneakyThrows
+	// todo figure out where this is used.
 	private Video videoFor(Map<String, Object> rs) {
 		var videoId = (String) rs.get("video_id");
 		return new Video(videoId, s(rs.get("title")), s(rs.get("description")),
 				Date.from(((LocalDateTime) rs.get("published_at")).atZone(ZoneId.systemDefault()).toInstant()),
-				new URI(s(rs.get("standard_thumbnail"))).toURL(), a(rs.get("tags")), i(rs.get("category_id")),
+				UrlUtils.url(s(rs.get("standard_thumbnail"))), a(rs.get("tags")), i(rs.get("category_id")),
 				i(rs.get("view_count")), i(rs.get("like_count")), i(rs.get("favorite_count")),
 				i(rs.get("comment_count")), null, false);
 	}
@@ -191,7 +199,6 @@ class PromotionJob implements Job<Boolean> {
 /**
  * Handles sizing the text of the tweet up to fit into Twitter's 280 char limitations
  */
-@Slf4j
 abstract class TweetTextComposer {
 
 	public static final int MAX_TWEET_LENGTH = 280;

@@ -1,14 +1,11 @@
 package com.joshlong.utils;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
 /**
  * Dates. What even. Ammirite?
  */
-@Slf4j
 public abstract class DateFormatUtils {
 
 	public static SimpleDateFormat getThreadsafeIsoDateTimeDateFormat() {

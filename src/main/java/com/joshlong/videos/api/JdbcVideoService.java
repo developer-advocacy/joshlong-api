@@ -1,7 +1,6 @@
 package com.joshlong.videos.api;
 
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import com.joshlong.utils.UrlUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
@@ -24,7 +23,6 @@ import java.util.function.Function;
  *
  * @author Josh Long
  */
-@Slf4j
 @Service
 @Transactional(readOnly = true)
 class JdbcVideoService implements VideoService {
@@ -38,10 +36,10 @@ class JdbcVideoService implements VideoService {
 			(String) row.get("playlist_id"), (String) row.get("title"));
 
 	private final Function<Map<String, Object>, Video> videoMapper = row -> new Video((String) row.get("video_id"),
-			(String) row.get("title"), url((String) row.get("standard_thumbnail")), (String) row.get("description"),
-			instant((LocalDateTime) row.get("published_at")), (int) row.get("view_count"),
-			(int) row.get("favorite_count"), (int) row.get("comment_count"), (int) row.get("like_count"),
-			(String[]) row.get("tags"));
+			(String) row.get("title"), UrlUtils.url((String) row.get("standard_thumbnail")),
+			(String) row.get("description"), instant((LocalDateTime) row.get("published_at")),
+			(int) row.get("view_count"), (int) row.get("favorite_count"), (int) row.get("comment_count"),
+			(int) row.get("like_count"), (String[]) row.get("tags"));
 
 	JdbcVideoService(JdbcTemplate jdbcTemplate) {
 		this.jdbcTemplate = jdbcTemplate;
@@ -103,11 +101,6 @@ class JdbcVideoService implements VideoService {
 	public List<Channel> channels() {
 		String sql = "select * from yt_channels";
 		return this.jdbcTemplate.query(sql, (rs, rowNum) -> new Channel(rs.getString("channel_id")));
-	}
-
-	@SneakyThrows
-	private static URL url(String url) {
-		return URI.create(url).toURL();
 	}
 
 	private static Instant instant(LocalDateTime localDateTime) {

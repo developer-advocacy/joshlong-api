@@ -6,8 +6,9 @@ import com.joshlong.IndexService;
 import com.joshlong.dates.IsoDateFormat;
 import com.joshlong.dates.SimpleDateDateFormat;
 import com.joshlong.lucene.LuceneTemplate;
-import lombok.extern.slf4j.Slf4j;
 import org.eclipse.jgit.lib.CoreConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
@@ -21,7 +22,6 @@ import org.springframework.stereotype.Component;
 import java.text.DateFormat;
 import java.util.Set;
 
-@Slf4j
 @Configuration
 @ImportRuntimeHints(IndexConfiguration.Hints.class)
 public class IndexConfiguration {
@@ -36,7 +36,7 @@ public class IndexConfiguration {
 			Set.of(CoreConfig.AutoCRLF.class, CoreConfig.CheckStat.class, CoreConfig.EOL.class,
 					CoreConfig.HideDotFiles.class, CoreConfig.EolStreamType.class, CoreConfig.LogRefUpdates.class,
 					CoreConfig.SymLinks.class, org.eclipse.jgit.internal.JGitText.class)
-					.forEach(clzz -> hints.reflection().registerType(clzz, MemberCategory.values()));
+					.forEach(c -> hints.reflection().registerType(c, MemberCategory.values()));
 		}
 
 	}
@@ -51,6 +51,8 @@ public class IndexConfiguration {
 
 	@Component
 	public static class Listener {
+
+		private final Logger log = LoggerFactory.getLogger(getClass());
 
 		private final DateFormat dateFormat;
 

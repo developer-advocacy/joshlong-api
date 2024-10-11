@@ -3,33 +3,37 @@ package com.joshlong.index;
 import com.joshlong.*;
 import com.joshlong.lucene.DocumentWriteMapper;
 import com.joshlong.lucene.LuceneTemplate;
-import lombok.SneakyThrows;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.Term;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.jsoup.Jsoup;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.EventListener;
 import org.springframework.util.Assert;
 import org.springframework.util.FileSystemUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.text.DateFormat;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-class DefaultIndexService implements IndexService, ApplicationListener<ApplicationEvent> {
+class DefaultIndexService implements IndexService {
 
-	private final static Log log = LogFactory.getLog(DefaultIndexService.class);
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final DateFormat simpleDateFormat;
 
@@ -53,7 +57,6 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 			.map(contentType -> contentType.name().toLowerCase(Locale.ROOT))//
 			.collect(Collectors.toSet());
 
-	@SneakyThrows
 	DefaultIndexService(DateFormat simpleDateFormat, ApplicationEventPublisher publisher,
 			BlogPostService blogPostService, LuceneTemplate luceneTemplate, URI gitRepository, File contentRoot,
 			boolean resetOnRebuild) {
@@ -66,16 +69,15 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 		this.gitRepository = gitRepository;
 	}
 
-	@SneakyThrows
-	private void ensureClonedRepository() {
+	private void ensureClonedRepository() throws GitAPIException {
 
-		log.info("should reset Git clone? " + this.resetOnRebuild);
+		log.info("should reset Git clone? {}", this.resetOnRebuild);
 
 		if (!this.resetOnRebuild)
 			return;
 
 		if (this.root.exists() && this.root.isDirectory()) {
-			log.info("deleting " + this.root.getAbsolutePath() + '.');
+			log.info("deleting {}.", this.root.getAbsolutePath());
 			FileSystemUtils.deleteRecursively(this.root);
 		}
 
@@ -84,14 +86,13 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 
 		try (var git = new Git(repo)) {
 			var status = git.status().call();
-			log.info("the status is " + status.toString());
+			this.log.info("the status is {}", status.toString());
 		}
 	}
 
-	@SneakyThrows
 	@Override
-	public IndexRebuildStatus rebuildIndex() {
-		log.info("refreshing " + IndexService.class.getName());
+	public IndexRebuildStatus rebuildIndex() throws Exception {
+		this.log.info("refreshing {}", IndexService.class.getName());
 		Assert.notNull(this.root, () -> "you must specify a valid root ");
 		this.publisher.publishEvent(new IndexingStartedEvent(new Date()));
 		this.ensureClonedRepository();
@@ -102,8 +103,8 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 			this.index.putAll(this.buildIndex());
 		}
 		var now = new Date();
-		Assert.state(this.index.size() > 0, () -> "there are no entries in the content index. "
-				+ "Something's wrong! Ensure you have content registered.");
+		Assert.state(!this.index.isEmpty(), () -> "there are no entries in the content index. Something's wrong! "
+				+ "Ensure you have content registered.");
 		this.publisher.publishEvent(new IndexingFinishedEvent(this.index, now));
 		return new IndexRebuildStatus(this.index.size(), now);
 
@@ -115,7 +116,6 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 	}
 
 	@Override
-	@SneakyThrows
 	public BlogPostSearchResults search(String query, int offset, int pageSize, boolean listedOnly) {
 		var results = this.searchIndex(query, this.index.size()) //
 				.stream() //
@@ -123,13 +123,13 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 				.sorted(Comparator.comparing(BlogPost::date).reversed()) //
 				.filter(bp -> listedOnly && bp.listed()).toList();
 		var returningList = results.subList(offset, Math.min(results.size(), offset + pageSize));
-		log.info("search('" + query + "'," + offset + "," + pageSize + "," + listedOnly + ")");
+		log.info("search('{}',{},{},{})", query, offset, pageSize, listedOnly);
 		return new BlogPostSearchResults(results.size(), offset, pageSize, returningList);
 	}
 
 	private List<String> searchIndex(String queryStr, int maxResults) {
 		var list = this.luceneTemplate.search(queryStr, maxResults, document -> document.get("path"));
-		log.info("the result is " + list.size());
+		log.info("the result is {}", list.size());
 		return list;
 	}
 
@@ -141,19 +141,23 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 		return sub.toLowerCase(Locale.ROOT);
 	}
 
-	@SneakyThrows
-	private Map<String, BlogPost> buildIndex() {
-		log.debug("building index @ " + Instant.now() + '.');
+	private Map<String, BlogPost> buildIndex() throws IOException {
+		log.debug("building index @ {}.", Instant.now());
 		var contentDirectory = new File(this.root, "content");
-		var mapOfContent = Files.walk(contentDirectory.toPath()) //
-				.parallel() //
-				.map(Path::toFile) //
-				.filter(this::isValidFile) //
-				.map(file -> {
-					var blogPost = this.blogPostService.buildBlogPostFrom(computePath(file, contentDirectory), file);
-					return new DefaultIndexService.BlogPostKey(blogPost.path(), blogPost);
-				}).collect(Collectors.toMap(DefaultIndexService.BlogPostKey::path,
-						DefaultIndexService.BlogPostKey::blogPost));
+		var mapOfContent = new ConcurrentHashMap<String, BlogPost>();
+		var executor = Executors.newVirtualThreadPerTaskExecutor();
+		var files = new ArrayList<CompletableFuture<?>>();
+		for (var path : Files.walk(contentDirectory.toPath()).collect(Collectors.toSet())) {
+			var file = path.toFile();
+			if (this.isValidFile(file)) {
+				files.add(CompletableFuture.runAsync(() -> {
+					var blogPost = blogPostService.buildBlogPostFrom(computePath(file, contentDirectory), file);
+					mapOfContent.put(blogPost.path(), blogPost);
+				}, executor));
+			}
+		}
+		CompletableFuture.allOf(files.toArray(new CompletableFuture[0])).join();
+		this.log.info("ran the index for all the files of size {}", mapOfContent.size());
 		this.luceneTemplate.write(mapOfContent.entrySet(), entry -> {
 			var path = entry.getKey();
 			var blogPost = entry.getValue();
@@ -181,7 +185,6 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 		return Jsoup.parse(htmlMarkup).text();
 	}
 
-	@SneakyThrows
 	private Document buildBlogPost(String relativePath, BlogPost post) {
 		var document = new Document();
 		document.add(new TextField("title", post.title(), Field.Store.YES));
@@ -201,14 +204,11 @@ class DefaultIndexService implements IndexService, ApplicationListener<Applicati
 		return false;
 	}
 
-	@Override
-	public void onApplicationEvent(ApplicationEvent event) {
+	@EventListener
+	public void on(ApplicationEvent event) throws Exception {
 		if (event instanceof SiteUpdatedEvent || event instanceof ApplicationReadyEvent) {
 			this.rebuildIndex();
 		}
-	}
-
-	private record BlogPostKey(String path, BlogPost blogPost) {
 	}
 
 }

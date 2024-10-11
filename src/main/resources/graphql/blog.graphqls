@@ -1,11 +1,11 @@
 
-
 type BlogPostSearchResults {
     totalResultsSize : Int
     offset : Int
     pageSize : Int
     posts : [BlogPost ]
 }
+
 type Content {
     title: String
     imageUrl: String
@@ -16,8 +16,6 @@ type IndexRebuildStatus  {
     entries : Int
     date : String
 }
-
-
 
 type BlogPost {
     title: String
@@ -38,9 +36,7 @@ type BlogPost {
 enum BlogPostContentType {
     HTML
     MD
-} 
-
-
+}
 
 type Appearance {
     event : String
@@ -49,4 +45,3 @@ type Appearance {
     time : String
     marketingBlurb: String
 }
-

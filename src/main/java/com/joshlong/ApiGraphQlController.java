@@ -1,6 +1,5 @@
 package com.joshlong;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.graphql.data.method.annotation.Argument;
 import org.springframework.graphql.data.method.annotation.QueryMapping;
@@ -14,7 +13,6 @@ import java.util.Collection;
 /**
  * @author Josh Long
  */
-@Slf4j
 @Controller
 class ApiGraphQlController {
 
@@ -38,7 +36,6 @@ class ApiGraphQlController {
 			@Qualifier("abstractsContentService") ContentService<String> abstractsContentService, //
 			@Qualifier("booksContentService") ContentService<Collection<Content>> booksContentService, //
 			@Qualifier("livelessonsContentService") ContentService<Collection<Content>> livelessonsContentService, //
-
 			BlogPostSearchService blogPostSearchService, //
 			AppearanceService appearanceService, //
 			PodcastService podcastService, //

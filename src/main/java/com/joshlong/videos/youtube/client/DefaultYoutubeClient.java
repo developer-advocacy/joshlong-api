@@ -1,20 +1,21 @@
 package com.joshlong.videos.youtube.client;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
+import com.joshlong.utils.UrlUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
-import java.net.URI;
 import java.time.Instant;
 import java.util.*;
 
 import static com.joshlong.videos.youtube.client.DefaultYoutubeClient.JsonFormattingUtils.*;
 
-@Slf4j
 class DefaultYoutubeClient implements YoutubeClient {
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final RestClient http;
 
@@ -66,7 +67,6 @@ class DefaultYoutubeClient implements YoutubeClient {
 
 	}
 
-	@SneakyThrows
 	private Video buildVideoFromJsonNode(JsonNode item) {
 		var id = item.get("id").textValue();
 		var snippet = item.get("snippet");
@@ -74,7 +74,7 @@ class DefaultYoutubeClient implements YoutubeClient {
 		var publishedAt = buildDateFrom(snippet.get("publishedAt").textValue());
 		var description = snippet.get("description").textValue();
 		var title = snippet.get("title").textValue();
-		var thumbnailUrl = URI.create(snippet.get("thumbnails").get("default").get("url").textValue()).toURL();
+		var thumbnailUrl = UrlUtils.url(snippet.get("thumbnails").get("default").get("url").textValue());
 		var tags = jsonNodeOrNull(snippet, "tags");
 		var upcoming = snippet.get("liveBroadcastContent").textValue() != null
 				&& snippet.get("liveBroadcastContent").textValue().contains("upcoming");
@@ -120,7 +120,6 @@ class DefaultYoutubeClient implements YoutubeClient {
 		throw new IllegalArgumentException("No video with id " + videoId + " found");
 	}
 
-	@SneakyThrows
 	private Playlist buildPlaylistForJsonNode(JsonNode jsonNode) {
 		var itemCount = jsonNode.get("contentDetails").get("itemCount").intValue();
 		var playlistId = jsonNode.get("id").textValue();
@@ -140,7 +139,7 @@ class DefaultYoutubeClient implements YoutubeClient {
 			return new ArrayList<>();
 		}
 		else {
-			return getVideosByPlaylist(playlistId, nextPageToken).videos();
+			return this.getVideosByPlaylist(playlistId, nextPageToken).videos();
 		}
 	}
 
@@ -262,7 +261,6 @@ class DefaultYoutubeClient implements YoutubeClient {
 		}
 	}
 
-	@SneakyThrows
 	private Channel buildChannelFromJsonNode(JsonNode jsonNode) {
 		var items = jsonNode.get("items");
 		for (var i : items) {
