@@ -41,6 +41,11 @@ jobs:
           P="${GITHUB_WORKSPACE}/bin"
           mkdir -p $P
           echo "${P}" >> $GITHUB_PATH
+      
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          version: 'latest'  # Or specify a specific version if needed
 
       - uses: 'google-github-actions/auth@v2'
         with:
