@@ -42,15 +42,15 @@ public class IndexConfiguration {
 	}
 
 	@Bean
-	public IndexService indexService(@SimpleDateDateFormat DateFormat simpleDateFormat,
-			ApplicationEventPublisher publisher, BlogProperties properties, BlogPostService blogPostService,
-			LuceneTemplate luceneTemplate) throws Exception {
+	IndexService indexService(@SimpleDateDateFormat DateFormat simpleDateFormat, ApplicationEventPublisher publisher,
+			BlogProperties properties, BlogPostService blogPostService, LuceneTemplate luceneTemplate)
+			throws Exception {
 		return new DefaultIndexService(simpleDateFormat, publisher, blogPostService, luceneTemplate,
 				properties.gitRepository(), properties.localCloneDirectory().getFile(), properties.resetOnRebuild());
 	}
 
 	@Component
-	public static class Listener {
+	static class Listener {
 
 		private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -62,12 +62,12 @@ public class IndexConfiguration {
 
 		@EventListener
 		public void indexStarted(IndexingStartedEvent startedEvent) {
-			log.info("index build started " + this.dateFormat.format(startedEvent.getSource()));
+			log.info("index build started {}", this.dateFormat.format(startedEvent.getSource()));
 		}
 
 		@EventListener
 		public void indexFinished(IndexingFinishedEvent finishedEvent) {
-			log.info("index build finished " + this.dateFormat.format(finishedEvent.getSource().date()));
+			log.info("index build finished {}", this.dateFormat.format(finishedEvent.getSource().date()));
 		}
 
 	}

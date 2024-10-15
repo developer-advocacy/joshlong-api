@@ -58,7 +58,7 @@ class ContentConfiguration {
 			Assert.notNull(index, "the index must not be null");
 			log.info("========================");
 			log.info("passthroughContentService");
-			index.keySet().forEach(k -> log.debug(key + '=' + index.get(k)));
+			index.keySet().forEach(k -> log.debug("{}={}", key, index.get(k)));
 			log.info("========================");
 			Assert.state(index.containsKey(key), "the index must contain the key '" + key + "'");
 			return index.get(key).processedContent();
