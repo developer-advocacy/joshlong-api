@@ -18,6 +18,7 @@ import java.io.File;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 @Configuration
 class ContentConfiguration {
@@ -51,7 +52,18 @@ class ContentConfiguration {
 	}
 
 	private HtmlPassthroughContentService passthroughContentService(String key) {
-		return new HtmlPassthroughContentService(() -> indexService.getIndex().get(key).processedContent());
+		var stringSupplier = (Supplier<String>) () -> {
+			Assert.notNull(this.indexService, "the indexService must not be null");
+			var index = this.indexService.getIndex();
+			Assert.notNull(index, "the index must not be null");
+			log.info("========================");
+			log.info("passthroughContentService");
+			index.keySet().forEach(k -> log.debug(key + '=' + index.get(k)));
+			log.info("========================");
+			Assert.state(index.containsKey(key), "the index must contain the key '" + key + "'");
+			return index.get(key).processedContent();
+		};
+		return new HtmlPassthroughContentService(stringSupplier);
 	}
 
 	@Bean
