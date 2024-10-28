@@ -206,7 +206,9 @@ class DefaultIndexService implements IndexService {
 
 	@EventListener
 	public void on(ApplicationEvent event) throws Exception {
+		this.log.info("{}::on(ApplicationEvent)", getClass().getName());
 		if (event instanceof SiteUpdatedEvent || event instanceof ApplicationReadyEvent) {
+			this.log.info("calling rebuildIndex");
 			this.rebuildIndex();
 		}
 	}
