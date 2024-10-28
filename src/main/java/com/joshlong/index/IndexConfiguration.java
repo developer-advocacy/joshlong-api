@@ -42,9 +42,9 @@ public class IndexConfiguration {
 	}
 
 	@Bean
-	IndexService indexService(@SimpleDateDateFormat DateFormat simpleDateFormat, ApplicationEventPublisher publisher,
-			BlogProperties properties, BlogPostService blogPostService, LuceneTemplate luceneTemplate)
-			throws Exception {
+	DefaultIndexService indexService(@SimpleDateDateFormat DateFormat simpleDateFormat,
+			ApplicationEventPublisher publisher, BlogProperties properties, BlogPostService blogPostService,
+			LuceneTemplate luceneTemplate) throws Exception {
 		return new DefaultIndexService(simpleDateFormat, publisher, blogPostService, luceneTemplate,
 				properties.gitRepository(), properties.localCloneDirectory().getFile(), properties.resetOnRebuild());
 	}

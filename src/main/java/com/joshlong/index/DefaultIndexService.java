@@ -3,8 +3,6 @@ package com.joshlong.index;
 import com.joshlong.*;
 import com.joshlong.lucene.DocumentWriteMapper;
 import com.joshlong.lucene.LuceneTemplate;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.apache.lucene.document.*;
 import org.apache.lucene.index.Term;
 import org.eclipse.jgit.api.Git;
@@ -13,7 +11,6 @@ import org.jsoup.Jsoup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.util.Assert;
@@ -204,13 +201,14 @@ class DefaultIndexService implements IndexService {
 		return false;
 	}
 
-	@EventListener
-	public void on(ApplicationEvent event) throws Exception {
-		this.log.info("{}::on({})", getClass().getName(), event.getClass().getName());
-		if (event instanceof SiteUpdatedEvent || event instanceof ApplicationReadyEvent) {
-			this.log.info("calling rebuildIndex");
-			this.rebuildIndex();
-		}
+	@EventListener(ApplicationReadyEvent.class)
+	void onApplicationReadyEvent() throws Exception {
+		rebuildIndex();
+	}
+
+	@EventListener(SiteUpdatedEvent.class)
+	void onSiteReadyEvent() throws Exception {
+		rebuildIndex();
 	}
 
 }
