@@ -1,0 +1,1 @@
+ALTER TABLE yt_videos ALTER COLUMN rating SET DEFAULT 0;

@@ -49,27 +49,27 @@ public class IndexConfiguration {
 				properties.gitRepository(), properties.localCloneDirectory().getFile(), properties.resetOnRebuild());
 	}
 
-	@Component
-	static class Listener {
+}
 
-		private final Logger log = LoggerFactory.getLogger(getClass());
+@Component
+class Listener {
 
-		private final DateFormat dateFormat;
+	private final Logger log = LoggerFactory.getLogger(getClass());
 
-		Listener(@IsoDateFormat DateFormat dateFormat) {
-			this.dateFormat = dateFormat;
-		}
+	private final DateFormat dateFormat;
 
-		@EventListener
-		public void indexStarted(IndexingStartedEvent startedEvent) {
-			log.info("index build started {}", this.dateFormat.format(startedEvent.getSource()));
-		}
+	Listener(@IsoDateFormat DateFormat dateFormat) {
+		this.dateFormat = dateFormat;
+	}
 
-		@EventListener
-		public void indexFinished(IndexingFinishedEvent finishedEvent) {
-			log.info("index build finished {}", this.dateFormat.format(finishedEvent.getSource().date()));
-		}
+	@EventListener
+	public void indexStarted(IndexingStartedEvent startedEvent) {
+		log.info("index build started {}", this.dateFormat.format(startedEvent.getSource()));
+	}
 
+	@EventListener
+	public void indexFinished(IndexingFinishedEvent finishedEvent) {
+		log.info("index build finished {}", this.dateFormat.format(finishedEvent.getSource().date()));
 	}
 
 }
