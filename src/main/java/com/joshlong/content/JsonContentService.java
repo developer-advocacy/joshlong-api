@@ -18,6 +18,7 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
 class JsonContentService implements ContentService<Collection<Content>> {
@@ -30,6 +31,8 @@ class JsonContentService implements ContentService<Collection<Content>> {
 
 	private final List<Content> contents = new CopyOnWriteArrayList<>();
 
+	private final AtomicBoolean indexed = new AtomicBoolean(false);
+
 	JsonContentService(Resource resource, Function<String, String> htmlRefResolver, ObjectMapper objectMapper) {
 		this.objectMapper = objectMapper;
 		this.resource = resource;
@@ -38,7 +41,7 @@ class JsonContentService implements ContentService<Collection<Content>> {
 
 	@Override
 	public Collection<Content> getContent() {
-		return this.contents;
+		return this.indexed.get() ? this.contents : List.of();
 	}
 
 	private URL buildUrlFrom(String url) throws MalformedURLException {
@@ -76,6 +79,7 @@ class JsonContentService implements ContentService<Collection<Content>> {
 			this.contents.addAll(content);
 		}
 
+		this.indexed.set(true);
 	}
 
 }
