@@ -23,16 +23,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
 class PodcastConfiguration {
 
 	@Bean
-	RomePodcastService romePodcastService()  {
+	RomePodcastService romePodcastService() {
 		return new RomePodcastService();
 	}
-	
-}
 
+}
 
 class RomePodcastService implements PodcastService, ApplicationListener<IndexingFinishedEvent> {
 
-	private final URL feedUrl = url("https://studio.media-mogul.io/api/public/feeds/moguls/16386/podcasts/1/episodes.atom");
+	private final URL feedUrl = url(
+			"https://studio.media-mogul.io/api/public/feeds/moguls/16386/podcasts/1/episodes.atom");
 
 	private final Object monitor = new Object();
 
@@ -40,11 +40,10 @@ class RomePodcastService implements PodcastService, ApplicationListener<Indexing
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-
 	private static URL url(String u) {
 		try {
 			return URI.create(u).toURL();
-		}// 
+		} //
 		catch (MalformedURLException e) {
 			throw new RuntimeException(e);
 		}
@@ -64,20 +63,17 @@ class RomePodcastService implements PodcastService, ApplicationListener<Indexing
 
 			// Process each entry
 			for (var entry : entries) {
-				var podcast = new Podcast(
-						-1,
-						UUID.randomUUID().toString(),
-						entry.getTitle(),//
-						entry.getPublishedDate(),//
+				var podcast = new Podcast(-1, UUID.randomUUID().toString(), entry.getTitle(), //
+						entry.getPublishedDate(), //
 						// todo figure out how to find the image url
-						// todo also can we encode extra data like the uuid and the id as links or something in the link? 
-						url(entry.getLinks().stream().filter(sl -> true).toList().iterator().next().getHref()),//
-						url(""),//
-						entry.getDescription().getValue()
-				);
+						// todo also can we encode extra data like the uuid and the id as
+						// links or something in the link?
+						url(entry.getLinks().stream().filter(sl -> true).toList().iterator().next().getHref()), //
+						url(""), //
+						entry.getDescription().getValue());
 				list.add(podcast);
 			}
-		}// 
+		} //
 		catch (Throwable t) {
 			log.warn("got an exception trying to read the feed [{}]", this.feedUrl.toExternalForm(), t);
 		}
@@ -93,14 +89,13 @@ class RomePodcastService implements PodcastService, ApplicationListener<Indexing
 				this.podcasts.clear();
 				var read = read();
 				this.podcasts.addAll(read);
-			}//
+			} //
 			catch (Exception e) {
 				throw new RuntimeException(e);
 			}
 
 		}
 	}
-
 
 	@Override
 	public Collection<Podcast> getPodcasts() {

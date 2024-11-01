@@ -29,11 +29,15 @@ class FeedRestController {
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final FeedTemplate feeds;
+
 	private final List<BlogPost> posts = new CopyOnWriteArrayList<>();
+
 	private final AtomicReference<String> renderedXml = new AtomicReference<>();
+
 	private final SyndEntryMapper<BlogPost> blogPostSyndEntryConvertor = new BlogPostSyndEntryConvertor();
+
 	private final BlogProperties properties;
-	
+
 	FeedRestController(FeedTemplate feedTemplate, BlogProperties properties) {
 		this.feeds = feedTemplate;
 		this.properties = properties;
@@ -57,8 +61,8 @@ class FeedRestController {
 						.of("title", "" + rss.title(), "link", "" + rss.link(), "description", "" + rss.description())
 						.toString());
 			}
-			var feed = this.feeds.buildFeed("rss_2.0", rss.title(),
-					rss.link(), rss.description(), blogPosts, blogPostSyndEntryConvertor );
+			var feed = this.feeds.buildFeed("rss_2.0", rss.title(), rss.link(), rss.description(), blogPosts,
+					blogPostSyndEntryConvertor);
 			var xml = this.feeds.render(feed);
 			this.renderedXml.set(xml);
 		}
@@ -68,13 +72,14 @@ class FeedRestController {
 	String feed() throws Exception {
 		return this.renderedXml.get();
 	}
+
 }
 
 class BlogPostSyndEntryConvertor implements SyndEntryMapper<BlogPost> {
-	
+
 	@Override
 	public SyndEntry map(BlogPost post) throws Exception {
-		
+
 		var entry = new SyndEntryImpl();
 		entry.setTitle(post.title());
 		entry.setLink(String.format("https://joshlong.com%s", post.path()));
@@ -88,4 +93,3 @@ class BlogPostSyndEntryConvertor implements SyndEntryMapper<BlogPost> {
 	}
 
 }
- 

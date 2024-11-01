@@ -40,10 +40,11 @@ class LegacyJsonPodcastService implements PodcastService {
 	private final Collection<Podcast> podcasts = new CopyOnWriteArrayList<>();
 
 	private final Object monitor = new Object();
+
 	private final ObjectMapper objectMapper;
 
-
-	LegacyJsonPodcastService(BlogProperties properties, ObjectMapper objectMapper) throws IOException, URISyntaxException {
+	LegacyJsonPodcastService(BlogProperties properties, ObjectMapper objectMapper)
+			throws IOException, URISyntaxException {
 		this.objectMapper = objectMapper;
 		this.rootUri = properties.bootifulPodcastApiServerUri();
 		this.uri = new URI(this.rootUri + "/site/podcasts").toURL();
