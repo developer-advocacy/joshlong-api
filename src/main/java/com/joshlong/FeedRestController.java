@@ -1,13 +1,14 @@
 package com.joshlong;
 
-import com.rometools.rome.feed.synd.*;
-import com.rometools.rome.io.FeedException;
-import com.rometools.rome.io.SyndFeedOutput;
+import com.joshlong.feed.FeedTemplate;
+import com.joshlong.feed.SyndEntryMapper;
+import com.rometools.rome.feed.synd.SyndContentImpl;
+import com.rometools.rome.feed.synd.SyndEntry;
+import com.rometools.rome.feed.synd.SyndEntryImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.MediaType;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -16,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 
 /**
  * Produces an RSS feed of all the blogs
@@ -28,16 +28,14 @@ class FeedRestController {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
-	private final Feeds feeds;
-
+	private final FeedTemplate feeds;
 	private final List<BlogPost> posts = new CopyOnWriteArrayList<>();
-
 	private final AtomicReference<String> renderedXml = new AtomicReference<>();
-
+	private final SyndEntryMapper<BlogPost> blogPostSyndEntryConvertor = new BlogPostSyndEntryConvertor();
 	private final BlogProperties properties;
-
-	FeedRestController(Feeds feeds, BlogProperties properties) {
-		this.feeds = feeds;
+	
+	FeedRestController(FeedTemplate feedTemplate, BlogProperties properties) {
+		this.feeds = feedTemplate;
 		this.properties = properties;
 	}
 
@@ -51,7 +49,6 @@ class FeedRestController {
 			this.posts.clear();
 			this.posts.addAll(posts);
 			var blogPosts = this.posts.stream()//
-					.map(new BlogPostSyndEntryConvertor())//
 					.toList();
 			var rss = properties.rss();
 			if (log.isDebugEnabled()) {
@@ -60,7 +57,8 @@ class FeedRestController {
 						.of("title", "" + rss.title(), "link", "" + rss.link(), "description", "" + rss.description())
 						.toString());
 			}
-			var feed = this.feeds.buildFeed("rss_2.0", rss.title(), rss.link(), rss.description(), blogPosts);
+			var feed = this.feeds.buildFeed("rss_2.0", rss.title(),
+					rss.link(), rss.description(), blogPosts, blogPostSyndEntryConvertor );
 			var xml = this.feeds.render(feed);
 			this.renderedXml.set(xml);
 		}
@@ -70,13 +68,13 @@ class FeedRestController {
 	String feed() throws Exception {
 		return this.renderedXml.get();
 	}
-
 }
 
-class BlogPostSyndEntryConvertor implements Function<BlogPost, SyndEntry> {
-
+class BlogPostSyndEntryConvertor implements SyndEntryMapper<BlogPost> {
+	
 	@Override
-	public SyndEntry apply(BlogPost post) {
+	public SyndEntry map(BlogPost post) throws Exception {
+		
 		var entry = new SyndEntryImpl();
 		entry.setTitle(post.title());
 		entry.setLink(String.format("https://joshlong.com%s", post.path()));
@@ -90,29 +88,4 @@ class BlogPostSyndEntryConvertor implements Function<BlogPost, SyndEntry> {
 	}
 
 }
-
-@Component
-class Feeds {
-
-	String render(SyndFeed feed) {
-		try {
-			var output = new SyndFeedOutput();
-
-			return output.outputString(feed);
-		}
-		catch (FeedException e) {
-			throw new RuntimeException(e);
-		}
-	}
-
-	SyndFeed buildFeed(String feedType, String title, String link, String description, List<SyndEntry> posts) {
-		var feed = new SyndFeedImpl();
-		feed.setFeedType(feedType);
-		feed.setTitle(title);
-		feed.setLink(link);
-		feed.setDescription(description);
-		feed.setEntries(posts);
-		return feed;
-	}
-
-}
+ 

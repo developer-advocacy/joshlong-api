@@ -1,8 +1,8 @@
+
 package com.joshlong.index;
 
 import com.joshlong.BlogPostService;
 import com.joshlong.BlogProperties;
-import com.joshlong.IndexService;
 import com.joshlong.dates.IsoDateFormat;
 import com.joshlong.dates.SimpleDateDateFormat;
 import com.joshlong.lucene.LuceneTemplate;

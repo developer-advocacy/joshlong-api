@@ -27,6 +27,11 @@
 
         <dependency>
             <groupId>com.joshlong</groupId>
+            <artifactId>feed-spring-boot-starter</artifactId>
+            <version>0.0.5</version>
+        </dependency>
+        <dependency>
+            <groupId>com.joshlong</groupId>
             <artifactId>twitter-hub-client</artifactId>
             <version>0.0.4-SNAPSHOT</version>
         </dependency>
