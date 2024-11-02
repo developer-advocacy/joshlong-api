@@ -3,8 +3,6 @@ package com.joshlong.podcasts;
 import com.joshlong.Podcast;
 import com.joshlong.PodcastService;
 import com.joshlong.index.IndexingFinishedEvent;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.util.StringUtils;
 import org.w3c.dom.Document;
@@ -17,10 +15,7 @@ import java.net.URI;
 import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 class DomAtomPodcastService implements PodcastService, ApplicationListener<IndexingFinishedEvent> {
@@ -32,6 +27,17 @@ class DomAtomPodcastService implements PodcastService, ApplicationListener<Index
 	private final URL feedUrl;
 
 	private final URL rootHost;
+
+	private final Comparator<Podcast> comparator = ((Comparator<Podcast>) (o1, o2) -> {
+
+		if (o1.date() != null && o2.date() != null)
+			return o1.date().compareTo(o2.date());
+
+		if (o1.id() != null && o2.id() != null)
+			return o1.id().compareTo(o2.id());
+
+		return 0;
+	}).reversed();
 
 	DomAtomPodcastService(URL feedUrl) {
 		this.feedUrl = feedUrl;
@@ -53,6 +59,7 @@ class DomAtomPodcastService implements PodcastService, ApplicationListener<Index
 				var doc = builder.parse(feedUrl);
 				doc.getDocumentElement().normalize();
 				var episodes = parseEntries(doc);
+				episodes.sort(this.comparator);
 				synchronized (this.monitor) {
 					this.podcasts.clear();
 					this.podcasts.addAll(episodes);
