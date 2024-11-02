@@ -3,6 +3,7 @@ package com.joshlong.podcasts;
 import com.joshlong.Podcast;
 import com.joshlong.PodcastService;
 import com.joshlong.index.IndexingFinishedEvent;
+import com.rometools.rome.feed.synd.SyndLink;
 import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
 import org.slf4j.Logger;
@@ -10,13 +11,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.Assert;
 
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Configuration
@@ -31,8 +31,7 @@ class PodcastConfiguration {
 
 class RomePodcastService implements PodcastService, ApplicationListener<IndexingFinishedEvent> {
 
-	private final URL feedUrl = url(
-			"https://studio.media-mogul.io/api/public/feeds/moguls/16386/podcasts/1/episodes.atom");
+	private final URL feedUrl = url("https://api.media-mogul.io/public/feeds/moguls/16386/podcasts/1/episodes.atom");
 
 	private final Object monitor = new Object();
 
@@ -49,9 +48,18 @@ class RomePodcastService implements PodcastService, ApplicationListener<Indexing
 		}
 	}
 
+	private static String urlForLink(List<SyndLink> links, String rel) {
+		return Objects.requireNonNull(links
+						.stream()
+						.filter(sl -> sl.getRel().equals(rel))
+						.findFirst()
+						.orElse(null))
+				.getHref();
+	}
+	
 	private Collection<Podcast> read() throws Exception {
 		var list = new ArrayList<Podcast>();
-		try {
+		try (var feedUrl = this.feedUrl.openStream()) {
 			// Create SyndFeedInput object to read the feed
 			var input = new SyndFeedInput();
 
@@ -63,13 +71,17 @@ class RomePodcastService implements PodcastService, ApplicationListener<Indexing
 
 			// Process each entry
 			for (var entry : entries) {
-				var podcast = new Podcast(-1, UUID.randomUUID().toString(), entry.getTitle(), //
+				var imgUrl = urlForLink(entry.getLinks(), "enclosure");
+				var podcastUrl = urlForLink(entry.getLinks(), "alternate");
+				Assert.notNull(podcastUrl, "there must be a valid link to the podcast episode");
+				Assert.notNull(imgUrl, "there must be a valid link to the podcast episode image");
+				var podcast = new Podcast(
+						-1,
+						UUID.randomUUID().toString(),
+						entry.getTitle(), //
 						entry.getPublishedDate(), //
-						// todo figure out how to find the image url
-						// todo also can we encode extra data like the uuid and the id as
-						// links or something in the link?
-						url(entry.getLinks().stream().filter(sl -> true).toList().iterator().next().getHref()), //
-						url(""), //
+						url(imgUrl),
+						url(podcastUrl),
 						entry.getDescription().getValue());
 				list.add(podcast);
 			}
@@ -82,10 +94,8 @@ class RomePodcastService implements PodcastService, ApplicationListener<Indexing
 
 	@Override
 	public void onApplicationEvent(IndexingFinishedEvent event) {
-
 		synchronized (this.monitor) {
 			try {
-
 				this.podcasts.clear();
 				var read = read();
 				this.podcasts.addAll(read);
@@ -93,7 +103,6 @@ class RomePodcastService implements PodcastService, ApplicationListener<Indexing
 			catch (Exception e) {
 				throw new RuntimeException(e);
 			}
-
 		}
 	}
 
