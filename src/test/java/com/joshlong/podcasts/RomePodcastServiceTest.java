@@ -11,14 +11,15 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class RomePodcastServiceTest {
 
-    private final RomePodcastService service = new RomePodcastService();
+	private final DomAtomPodcastService service = new DomAtomPodcastService();
 
-    @Test
-    void test() {
-        this.service.onApplicationEvent(new IndexingFinishedEvent(Map.of(), new Date()));
-        var podcasts = this.service.getPodcasts();
-        assertNotNull(podcasts);
-        assertFalse(podcasts.isEmpty());
+	@Test
+	void test() {
+		this.service.onApplicationEvent(new IndexingFinishedEvent(Map.of(), new Date()));
+		var podcasts = this.service.getPodcasts();
+		assertNotNull(podcasts);
+		assertFalse(podcasts.isEmpty());
 
-    }
+	}
+
 }
