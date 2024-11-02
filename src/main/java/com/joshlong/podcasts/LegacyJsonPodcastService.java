@@ -29,7 +29,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  *
  * @author Josh Long
  */
-class DefaultPodcastService implements PodcastService {
+class LegacyJsonPodcastService implements PodcastService {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
@@ -39,11 +39,12 @@ class DefaultPodcastService implements PodcastService {
 
 	private final Collection<Podcast> podcasts = new CopyOnWriteArrayList<>();
 
-	private final ObjectMapper objectMapper;
-
 	private final Object monitor = new Object();
 
-	DefaultPodcastService(BlogProperties properties, ObjectMapper objectMapper) throws IOException, URISyntaxException {
+	private final ObjectMapper objectMapper;
+
+	LegacyJsonPodcastService(BlogProperties properties, ObjectMapper objectMapper)
+			throws IOException, URISyntaxException {
 		this.objectMapper = objectMapper;
 		this.rootUri = properties.bootifulPodcastApiServerUri();
 		this.uri = new URI(this.rootUri + "/site/podcasts").toURL();
