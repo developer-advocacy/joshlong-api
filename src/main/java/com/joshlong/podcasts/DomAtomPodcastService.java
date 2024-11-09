@@ -102,7 +102,7 @@ class DomAtomPodcastService implements PodcastService, ApplicationListener<Index
 					var relValue = linkElement.getAttribute(rel);
 					var hrefValue = linkElement.getAttribute("href");
 					if (StringUtils.hasText(relValue) && StringUtils.hasText(hrefValue)) {
-						imageHref = rootHost + hrefValue;
+						imageHref = hrefValue;
 					} //
 					else {
 						episodeHref = hrefValue;
