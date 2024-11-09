@@ -18,6 +18,9 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * this uses the RSS feed 
+ */
 class DomAtomPodcastService implements PodcastService, ApplicationListener<IndexingFinishedEvent> {
 
 	private final Object monitor = new Object();
