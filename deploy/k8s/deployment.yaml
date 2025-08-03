@@ -15,7 +15,7 @@ spec:
         app: joshlong-api
     spec:
       containers:
-        - image: gcr.io/joshlong/joshlong-api
+        - image: us-docker.pkg.dev/joshlong/mogul-artifact-registry/joshlong-api:latest
           imagePullPolicy: Always
           name: joshlong-api
 

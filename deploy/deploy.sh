@@ -6,6 +6,7 @@ export APP_NAME=joshlong-api
 export SECRETS=${APP_NAME}-secrets
 export SECRETS_FN=$HOME/${SECRETS}
 # export IMAGE_NAME=gcr.io/${GCLOUD_PROJECT}/${APP_NAME}
+# export IMAGE_NAME=us-docker.pkg.dev/${GCLOUD_PROJECT}/mogul-artifact-registry/${APP_NAME}:latest
 export IMAGE_NAME=us-docker.pkg.dev/${GCLOUD_PROJECT}/mogul-artifact-registry/${APP_NAME}:latest
 export RESERVED_IP_NAME=${NS_NAME}-${APP_NAME}-ip
 docker rmi -f $IMAGE_NAME

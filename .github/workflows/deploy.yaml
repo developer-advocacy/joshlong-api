@@ -39,18 +39,9 @@ jobs:
           mkdir -p $P
           echo "${P}" >> $GITHUB_PATH
 
-      - name: Set up gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          version: "latest" # Or specify a specific version if needed
-
       - uses: "google-github-actions/auth@v2"
         with:
           credentials_json: "${{ secrets.GCLOUD_SA_KEY }}"
-
-      - run: |
-          gcloud config set project $GCLOUD_PROJECT
-          gcloud --quiet auth configure-docker us-docker.pkg.dev
 
       - id: "get-credentials"
         uses: "google-github-actions/get-gke-credentials@v2"
@@ -60,7 +51,7 @@ jobs:
 
       - run: |
           gcloud config set project $GCLOUD_PROJECT
-          gcloud --quiet auth configure-docker
+          gcloud --quiet auth configure-docker us-docker.pkg.dev
           kubectl get pods
 
       - uses: actions/setup-java@v4.3.0
