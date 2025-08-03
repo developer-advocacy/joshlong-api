@@ -1,13 +1,12 @@
 name: Deploy
 
 env:
+  BLOG_INDEX_REBUILD_KEY: ${{ secrets.BLOG_INDEX_REBUILD_KEY }}
 
-  BLOG_INDEX_REBUILD_KEY : ${{ secrets.BLOG_INDEX_REBUILD_KEY }}
-  
   SPRING_DATASOURCE_URL: jdbc:postgresql://${{secrets.JOSHLONG_DB_HOST}}/${{ secrets.JOSHLONG_DB_SCHEMA }}
   SPRING_DATASOURCE_PASSWORD: ${{ secrets.JOSHLONG_DB_PASSWORD }}
   SPRING_DATASOURCE_USERNAME: ${{ secrets.JOSHLONG_DB_USERNAME }}
-  
+
   SPRING_RABBITMQ_HOST: ${{ secrets.TWITTER_SERVICE_RABBITMQ_HOST }}
   SPRING_RABBITMQ_PASSWORD: ${{ secrets.TWITTER_SERVICE_RABBITMQ_PASSWORD }}
   SPRING_RABBITMQ_PORT: ${{ secrets.TWITTER_SERVICE_RABBITMQ_PORT }}
@@ -18,22 +17,20 @@ env:
   BOOTIFUL_TWITTER_CLIENT_ID: ${{ secrets.TWITTER_CLIENTS_YOUTUBE_CLIENT_ID }}
   BOOTIFUL_TWITTER_CLIENT_SECRET: ${{ secrets.TWITTER_CLIENTS_YOUTUBE_CLIENT_SECRET }}
   APP_NAME: joshlong-api
-  GKE_CLUSTER:   ${{ secrets.GKE_CLUSTER }}
-  GCLOUD_ZONE:  ${{ secrets.GCLOUD_ZONE }}
-  NS_NAME:  ${{ secrets.NS_NAME }}
-  GCLOUD_SA_KEY:  ${{ secrets.GCLOUD_SA_KEY }}
+  GKE_CLUSTER: ${{ secrets.GKE_CLUSTER }}
+  GCLOUD_ZONE: ${{ secrets.GCLOUD_ZONE }}
+  NS_NAME: ${{ secrets.NS_NAME }}
+  GCLOUD_SA_KEY: ${{ secrets.GCLOUD_SA_KEY }}
 
 on:
   push:
-    branches: [ main ]
-
+    branches: [main]
 
 jobs:
   build-and-deploy:
     name: Setup and Deploy
     runs-on: ubuntu-latest
     steps:
-
       - uses: actions/checkout@v4
 
       - name: "Setup PATH"
@@ -41,39 +38,41 @@ jobs:
           P="${GITHUB_WORKSPACE}/bin"
           mkdir -p $P
           echo "${P}" >> $GITHUB_PATH
-      
+
       - name: Set up gcloud CLI
         uses: google-github-actions/setup-gcloud@v2
         with:
-          version: 'latest'  # Or specify a specific version if needed
+          version: "latest" # Or specify a specific version if needed
 
-      - uses: 'google-github-actions/auth@v2'
+      - uses: "google-github-actions/auth@v2"
         with:
-          credentials_json: '${{ secrets.GCLOUD_SA_KEY }}'
-      
-      - id: 'get-credentials'
-        uses: 'google-github-actions/get-gke-credentials@v2'
-        with:
-          cluster_name: '${{ env.GKE_CLUSTER  }}'
-          location: '${{ env.GCLOUD_ZONE }}'
+          credentials_json: "${{ secrets.GCLOUD_SA_KEY }}"
 
       - run: |
-          gcloud config set project $GCLOUD_PROJECT 
+          gcloud config set project $GCLOUD_PROJECT
+          gcloud --quiet auth configure-docker us-docker.pkg.dev
+
+      - id: "get-credentials"
+        uses: "google-github-actions/get-gke-credentials@v2"
+        with:
+          cluster_name: "${{ env.GKE_CLUSTER  }}"
+          location: "${{ env.GCLOUD_ZONE }}"
+
+      - run: |
+          gcloud config set project $GCLOUD_PROJECT
           gcloud --quiet auth configure-docker
           kubectl get pods
-      
+
       - uses: actions/setup-java@v4.3.0
         with:
-          distribution: 'adopt'
+          distribution: "adopt"
           java-version: 21
 
       - name: Deploy
         run: |
-          kubectl get ns/$NS_NAME || kubectl create ns $NS_NAME 
+          kubectl get ns/$NS_NAME || kubectl create ns $NS_NAME
           kubectl config set-context --current --namespace=$NS_NAME
           kubectl config view --minify | grep namespace: && echo "found the namespace.."
           cd $GITHUB_WORKSPACE
           export ROOT_DIR=$GITHUB_WORKSPACE
           ./deploy/deploy.sh
-
-
