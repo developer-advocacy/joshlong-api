@@ -21,7 +21,7 @@ env:
   GCLOUD_ZONE: ${{ secrets.GCLOUD_ZONE }}
   NS_NAME: ${{ secrets.NS_NAME }}
   GCLOUD_SA_KEY: ${{ secrets.GCLOUD_SA_KEY }}
-
+  GCLOUD_PROJECT: joshlong
 on:
   push:
     branches: [main]
