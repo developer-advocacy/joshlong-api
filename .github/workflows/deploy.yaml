@@ -57,13 +57,13 @@ jobs:
       - uses: actions/setup-java@v4.3.0
         with:
           distribution: "adopt"
-          java-version: 21
+          java-version: 24
 
       - name: Deploy
         run: |
+          export IMAGE_NAME="us-docker.pkg.dev/${GCLOUD_PROJECT}/developer-advocacy-artifact-registry/${APP_NAME}:latest"
+          export ROOT_DIR=$GITHUB_WORKSPACE
           kubectl get ns/$NS_NAME || kubectl create ns $NS_NAME
           kubectl config set-context --current --namespace=$NS_NAME
           kubectl config view --minify | grep namespace: && echo "found the namespace.."
-          cd $GITHUB_WORKSPACE
-          export ROOT_DIR=$GITHUB_WORKSPACE
-          ./deploy/deploy.sh
+          $GITHUB_WORKSPACE/deploy/deploy.sh
