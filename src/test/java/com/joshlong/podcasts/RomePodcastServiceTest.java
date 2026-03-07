@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class RomePodcastServiceTest {
 
 	private final DomAtomPodcastService service = new DomAtomPodcastService(
-			new URI("https://api.media-mogul.io/public/feeds/moguls/16386/podcasts/1/episodes.atom").toURL());
+			new URI("https://api.mogul.tools/public/feeds/moguls/16386/podcasts/1/episodes.atom").toURL());
 
 	RomePodcastServiceTest() throws MalformedURLException, URISyntaxException {
 	}

@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * this uses the RSS feed 
+ * this uses the RSS feed
  */
 class DomAtomPodcastService implements PodcastService, ApplicationListener<IndexingFinishedEvent> {
 
@@ -132,10 +132,10 @@ class DomAtomPodcastService implements PodcastService, ApplicationListener<Index
 				}
 
 				// Parse UUID from metadata
-				var metadataNodes = entryElement.getElementsByTagNameNS("http://api.media-mogul.io", "metadata");
+				var metadataNodes = entryElement.getElementsByTagNameNS("https://api.mogul.tools", "metadata");
 				if (metadataNodes.getLength() > 0) {
 					var metadataElement = (Element) metadataNodes.item(0);
-					var uuidNodes = metadataElement.getElementsByTagNameNS("http://api.media-mogul.io", "uuid");
+					var uuidNodes = metadataElement.getElementsByTagNameNS("https://api.mogul.tools", "uuid");
 					if (uuidNodes.getLength() > 0) {
 						uuid = uuidNodes.item(0).getTextContent();
 					}
