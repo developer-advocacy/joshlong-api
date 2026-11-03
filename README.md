@@ -44,16 +44,18 @@ All of the following things have externalities that need to be managed. Once the
 Check that you've committed [a valid file to the content repository](https://github.com/joshlong/joshlong.github.io-content). 
 That in turn should kick off a Github Actions run that then triggers a rebuild on the API and that invalidates all cached state and reads everything anew.
 
-### Not Seeing the Latest Spring Tips Live Episodes? 
+### Not Seeing the Latest Videos?
 
-Make sure that [the `spring-tips/site-generator` Github Action has run](https://github.com/spring-tips/site-generator/tree/master). It might be that the Github Action is expired and I need to manually bump it. This simply updates the [`episodes.json` file in this git repository](https://github.com/spring-tips/spring-tips.github.io). You'll see updates [on the SpringTipsLive.io `episodes.json` feed](https://springtipslive.io/episodes.json). 
+The Spring Tips and Coffee + Software videos come from the `yt_*` tables in PostgreSQL, which the YouTube ingest job fills.
+It runs at startup and every twelve hours, but only when `bootiful.batch.run=true` (`BOOTIFUL_BATCH_RUN` in the pipeline's `manifest.yml`).
+Spring Tips is the `Spring Tips` playlist on the SpringDeveloper channel, and Coffee + Software is everything the Coffee + Software channel uploads.
+If the job is running but nothing changes, look for `INGEST` in the logs, and check that `BOOTIFUL_YOUTUBE_API_KEY` is still a valid YouTube Data API key.
 
-TODO: there should be a Github Action on the repository with `episodes.json` that in turn triggers a rebuild of joshlong.com. That might be seen as an uncooth coupling of concerns, however. Do I really want the Spring Tips Live services to be aware of their representation on JoshLong.com?  
+### Not Seeing the Latest Bootiful Podcast episode?
 
-### Not Seeing the Latest Bootiful Podcast episode? 
-
-
-
+The episodes come from Mogul's public Atom feed, `blog.rss.feed`, which the api reads at startup, whenever it rebuilds the index, and every hour.
+Mogul lists an episode once it is complete and has a published publication with a link, preferring its Podbean page.
+If an episode is on Podbean but not in [the feed](https://api.mogul.tools/public/feeds/moguls/16386/podcasts/1/episodes.atom), look at its publications in Mogul.
 
 ### Not Seeing the Latest Appearances? 
 
