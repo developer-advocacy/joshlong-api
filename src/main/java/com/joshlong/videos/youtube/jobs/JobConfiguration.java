@@ -23,17 +23,22 @@ class JobConfiguration {
 	ApplicationListener<IngestJobInitiatedEvent> jobListener(JobProperties properties,
 			CompositeIngestJob compositeIngestJob, PromotionJob promotion) {
 		return event -> {
-			if (properties.batch().run()) {
-				try {
-					for (var job : new Job[] { compositeIngestJob, promotion })
-						job.run();
-				} //
-				catch (Exception e) {
-					throw new RuntimeException(e);
-				}
+			if (!properties.batch().run()) {
+				this.log.info("not running the ingest job because bootiful.batch.run=false");
+				return;
 			}
-			else
-				this.log.info("not running batch ingest and promotion job because bootiful.batch.run=false");
+			try {
+				compositeIngestJob.run();
+				// the promotion tweets the videos it ingests, and there's no twitter
+				// account behind it any more, so it runs only when it's asked to.
+				if (properties.promotion().run())
+					promotion.run();
+				else
+					this.log.info("not running the promotion job because bootiful.promotion.run=false");
+			} //
+			catch (Exception e) {
+				throw new RuntimeException(e);
+			}
 		};
 	}
 

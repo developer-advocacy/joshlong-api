@@ -17,9 +17,10 @@ class SchedulingConfiguration {
 		this.applicationEventPublisher = applicationEventPublisher;
 	}
 
+	// the first run is right after startup, on the scheduler's thread, so it doesn't hold
+	// up the application becoming ready
 	@Scheduled(fixedRate = 12, timeUnit = TimeUnit.HOURS)
 	public void scheduled() {
-		System.out.println("scheduled!");
 		this.applicationEventPublisher.publishEvent(new IngestJobInitiatedEvent(Instant.now()));
 	}
 

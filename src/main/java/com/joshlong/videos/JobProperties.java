@@ -17,6 +17,6 @@ public record JobProperties(Map<String, String> channels, Youtube youtube, Batch
 	public record Youtube(String apiKey) {
 	}
 
-	public record Promotion(String[] playlistIds) {
+	public record Promotion(String[] playlistIds, boolean run) {
 	}
 }

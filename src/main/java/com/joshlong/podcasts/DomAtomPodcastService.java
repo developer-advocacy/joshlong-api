@@ -3,7 +3,10 @@ package com.joshlong.podcasts;
 import com.joshlong.Podcast;
 import com.joshlong.PodcastService;
 import com.joshlong.index.IndexingFinishedEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -13,23 +16,26 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 
 /**
  * this uses the RSS feed
  */
 class DomAtomPodcastService implements PodcastService, ApplicationListener<IndexingFinishedEvent> {
 
+	private static final String ATOM_NAMESPACE = "http://www.w3.org/2005/Atom";
+
+	private final Logger log = LoggerFactory.getLogger(getClass());
+
 	private final Object monitor = new Object();
 
 	private final Collection<Podcast> podcasts = new CopyOnWriteArrayList<>();
 
 	private final URL feedUrl;
-
-	private final URL rootHost;
 
 	private final Comparator<Podcast> comparator = ((Comparator<Podcast>) (o1, o2) -> {
 
@@ -44,7 +50,6 @@ class DomAtomPodcastService implements PodcastService, ApplicationListener<Index
 
 	DomAtomPodcastService(URL feedUrl) {
 		this.feedUrl = feedUrl;
-		this.rootHost = url(this.feedUrl.getProtocol() + "://" + this.feedUrl.getHost());
 	}
 
 	@Override
@@ -54,6 +59,15 @@ class DomAtomPodcastService implements PodcastService, ApplicationListener<Index
 
 	@Override
 	public void onApplicationEvent(IndexingFinishedEvent event) {
+		this.refresh();
+	}
+
+	/**
+	 * the site rebuilds once a day, but an episode goes out every week or so, and the
+	 * feed is cheap to read, so this doesn't wait for a rebuild to notice one.
+	 */
+	@Scheduled(fixedRate = 1, initialDelay = 1, timeUnit = TimeUnit.HOURS)
+	void refresh() {
 		try {
 			var factory = DocumentBuilderFactory.newInstance();
 			factory.setNamespaceAware(true);
@@ -70,7 +84,8 @@ class DomAtomPodcastService implements PodcastService, ApplicationListener<Index
 			}
 		} //
 		catch (Exception e) {
-			throw new RuntimeException(e);
+			// keep the episodes we have: the next refresh will try again
+			this.log.warn("could not read the podcast feed {}", this.feedUrl, e);
 		}
 
 	}
@@ -123,24 +138,29 @@ class DomAtomPodcastService implements PodcastService, ApplicationListener<Index
 				if (updatedNodes.getLength() > 0) {
 					var updatedStr = updatedNodes.item(0).getTextContent();
 					try {
-						var dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
-						updated = dateFormat.parse(updatedStr);
+						updated = Date.from(Instant.parse(updatedStr.trim()));
 					}
-					catch (ParseException e) {
-						System.err.println("Error parsing date: " + updatedStr);
+					catch (DateTimeParseException e) {
+						this.log.warn("could not parse the date {}", updatedStr, e);
 					}
 				}
 
-				// Parse UUID from metadata
-				var metadataNodes = entryElement.getElementsByTagNameNS("https://api.mogul.tools", "metadata");
+				// the entry's id is a urn:uuid:..., and mogul's own id for the episode is
+				// in
+				// its metadata
+				var idNodes = entryElement.getElementsByTagNameNS(ATOM_NAMESPACE, "id");
+				if (idNodes.getLength() > 0) {
+					uuid = idNodes.item(0).getTextContent().trim().replaceFirst("^urn:uuid:", "");
+				}
+				var id = 0;
+				var metadataNodes = entryElement.getElementsByTagNameNS("*", "metadata");
 				if (metadataNodes.getLength() > 0) {
-					var metadataElement = (Element) metadataNodes.item(0);
-					var uuidNodes = metadataElement.getElementsByTagNameNS("https://api.mogul.tools", "uuid");
-					if (uuidNodes.getLength() > 0) {
-						uuid = uuidNodes.item(0).getTextContent();
+					var metadataIdNodes = ((Element) metadataNodes.item(0)).getElementsByTagNameNS("*", "id");
+					if (metadataIdNodes.getLength() > 0) {
+						id = Integer.parseInt(metadataIdNodes.item(0).getTextContent().trim());
 					}
 				}
-				episodes.add(new Podcast(0, uuid, title, updated, url(imageHref), url(episodeHref), summary));
+				episodes.add(new Podcast(id, uuid, title, updated, url(imageHref), url(episodeHref), summary));
 			}
 		}
 

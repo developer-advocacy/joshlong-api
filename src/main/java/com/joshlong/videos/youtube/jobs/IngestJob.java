@@ -8,8 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.simple.JdbcClient;
 
-import java.util.ArrayList;
-
 class IngestJob implements Job {
 
 	private final Logger log = LoggerFactory.getLogger(getClass());
@@ -39,11 +37,9 @@ class IngestJob implements Job {
 		// table and the (video and channel) into its join table
 		// 3. get all the videos for the channel, write them, also noting the channel and
 		// video in the correct join table
-		// 4. for each unique playlist_id in yt_playlist_videos, get the playlist data
-		// from the API and write it to yt_playlists
+		// 4. write each of the channel's playlists to yt_playlists
 		// 5. for each unique channel in yt_channel_videos, get the channel data from the
 		// API and write it to yt_channels
-		var allPlaylists = new ArrayList<Playlist>();
 		this.resetTablesFreshStatus();
 		var channel = this.client.getChannelById(this.channelId);
 
@@ -52,14 +48,13 @@ class IngestJob implements Job {
 				this.doWriteVideo(video);
 
 		for (var playlist : this.client.getAllPlaylistsByChannel(channel.channelId())) {
-			allPlaylists.add(playlist);
-			var videos = this.client.getAllVideosByChannel(playlist.playlistId());
+			this.doWritePlaylist(playlist);
+			var videos = this.client.getAllVideosByPlaylist(playlist.playlistId());
 			for (var video : videos) {
 				this.doWritePlaylistsVideos(channel, playlist, video);
 			}
 		}
 		this.enrichChannels();
-		this.enrichPlaylists();
 
 	}
 
@@ -67,16 +62,14 @@ class IngestJob implements Job {
 		var channelIds = this.db//
 				.sql(" select distinct channel_id from yt_channel_videos ")//
 				.query((r, i) -> r.getString("channel_id")).list();//
-		for (var channel : channelIds)
-			this.doWriteChannel(client.getChannelById(channel));
-
-	}
-
-	private void enrichPlaylists() {
-		var playlistIds = this.db.sql(" select distinct playlist_id from yt_playlist_videos pv ")//
-				.query((rs, rowNum) -> rs.getString("playlist_id")).list();//
-		for (var playlistId : playlistIds) {
-			this.doWritePlaylist(this.client.getPlaylistById(playlistId));
+		for (var channel : channelIds) {
+			// a playlist can hold another channel's video, and that channel might be gone
+			try {
+				this.doWriteChannel(this.client.getChannelById(channel));
+			} //
+			catch (Exception e) {
+				this.log.warn("could not read the channel {}", channel, e);
+			}
 		}
 	}
 
@@ -111,7 +104,11 @@ class IngestJob implements Job {
 				)
 				values( :playlistId, :channelId, :publishedAt, :title, :description, :itemCount, true )
 				on conflict on constraint yt_playlists_pkey
-				do update SET fresh = true where yt_playlists.playlist_id = :playlistId
+				do update set
+				    fresh = true,
+				    title = excluded.title,
+				    description = excluded.description,
+				    item_count = excluded.item_count
 				""";
 		this.db.sql(sql)//
 				.param("itemCount", playlist.itemCount())//

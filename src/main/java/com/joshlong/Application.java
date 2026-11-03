@@ -2,17 +2,14 @@ package com.joshlong;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.joshlong.videos.JobProperties;
-import com.joshlong.videos.youtube.IngestJobInitiatedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aot.hint.MemberCategory;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
-import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.http.HttpMethod;
@@ -20,7 +17,6 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -35,11 +31,6 @@ public class Application {
 
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
-	}
-
-	@Bean
-	ApplicationRunner ingestJobInitiationEventListener(ApplicationEventPublisher publisher) {
-		return e -> publisher.publishEvent(new IngestJobInitiatedEvent(Instant.now()));
 	}
 
 	static class Hints implements RuntimeHintsRegistrar {

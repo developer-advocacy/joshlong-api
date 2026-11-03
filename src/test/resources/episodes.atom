@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:mogul-feeds="http://api.mogul.tools">
+    <title>A Bootiful Podcast</title>
+    <link href="/public/feeds/moguls/16386/podcasts/1/episodes.atom" rel="self"/>
+    <updated>2024-07-26T23:13:33Z</updated>
+    <author>
+        <name>Josh Long</name>
+    </author>
+    <id>urn:uuid:00000000-0000-0000-0000-000000000001</id>
+    <entry>
+        <link href="https://example.com/older.jpg" length="100" rel="enclosure" title="Thumbnail" type="image/jpeg"/>
+        <title>an older episode</title>
+        <link href="https://bootifulpodcast.podbean.com/e/older/"/>
+        <id>urn:uuid:00000000-0000-0000-0000-0000000001a3</id>
+        <updated>2026-09-24T21:37:52Z</updated>
+        <summary>the older one</summary>
+        <mogul-feeds:metadata>
+            <mogul-feeds:id>419</mogul-feeds:id>
+        </mogul-feeds:metadata>
+    </entry>
+    <entry>
+        <link href="https://example.com/newer.jpg" length="100" rel="enclosure" title="Thumbnail" type="image/jpeg"/>
+        <title>a newer episode</title>
+        <link href="https://bootifulpodcast.podbean.com/e/newer/"/>
+        <id>urn:uuid:00000000-0000-0000-0000-0000000001aa</id>
+        <updated>2026-10-29T10:59:11Z</updated>
+        <summary>the newer one</summary>
+        <mogul-feeds:metadata>
+            <mogul-feeds:id>426</mogul-feeds:id>
+        </mogul-feeds:metadata>
+    </entry>
+</feed>

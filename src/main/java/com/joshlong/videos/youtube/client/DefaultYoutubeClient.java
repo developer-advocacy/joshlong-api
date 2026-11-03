@@ -15,6 +15,11 @@ import static com.joshlong.videos.youtube.client.DefaultYoutubeClient.JsonFormat
 
 class DefaultYoutubeClient implements YoutubeClient {
 
+	/**
+	 * the most results the youtube data api returns for one request
+	 */
+	private static final int MAX_RESULTS = 50;
+
 	private final Logger log = LoggerFactory.getLogger(getClass());
 
 	private final RestClient http;
@@ -94,19 +99,20 @@ class DefaultYoutubeClient implements YoutubeClient {
 
 	@Override
 	public Map<String, Video> getVideosByIds(List<String> videoIds) {
-		var joinedIds = String.join(",", videoIds);
-		var url = "https://youtube.googleapis.com/youtube/v3/videos?part={parts}&id={ids}&key={key}";
-		var jn = this.http.get()//
-				.uri(url, Map.of("ids", joinedIds, "key", this.apiKey, "parts", "snippet,statistics"))//
-				.retrieve()//
-				.body(JsonNode.class);//
-		var items = jn.get("items");
-		var list = new ArrayList<Video>();
-		for (var item : items)
-			list.add(buildVideoFromJsonNode(item));
 		var map = new HashMap<String, Video>();
-		for (var m : list)
-			map.put(m.videoId(), m);
+		// the api answers for at most MAX_RESULTS ids at a time
+		for (var i = 0; i < videoIds.size(); i += MAX_RESULTS) {
+			var joinedIds = String.join(",", videoIds.subList(i, Math.min(i + MAX_RESULTS, videoIds.size())));
+			var url = "https://youtube.googleapis.com/youtube/v3/videos?part={parts}&id={ids}&key={key}";
+			var jn = this.http.get()//
+					.uri(url, Map.of("ids", joinedIds, "key", this.apiKey, "parts", "snippet,statistics"))//
+					.retrieve()//
+					.body(JsonNode.class);//
+			for (var item : jn.get("items")) {
+				var video = buildVideoFromJsonNode(item);
+				map.put(video.videoId(), video);
+			}
+		}
 		return map;
 	}
 
@@ -133,23 +139,25 @@ class DefaultYoutubeClient implements YoutubeClient {
 
 	@Override
 	public Collection<Video> getAllVideosByPlaylist(String playlistId) {
-		var playlistVideos = this.getVideosByPlaylist(playlistId, null);//
-		var nextPageToken = playlistVideos.nextPageToken();
-		if (!StringUtils.hasText(nextPageToken)) {
-			return new ArrayList<>();
+		var videos = new ArrayList<Video>();
+		String pageToken = null;
+		do {
+			var page = this.getVideosByPlaylist(playlistId, pageToken);
+			videos.addAll(page.videos());
+			pageToken = page.nextPageToken();
 		}
-		else {
-			return this.getVideosByPlaylist(playlistId, nextPageToken).videos();
-		}
+		while (StringUtils.hasText(pageToken));
+		return videos;
 	}
 
 	@Override
 	public PlaylistVideos getVideosByPlaylist(String playlistId, String pageToken) {
 
-		var url = "https://youtube.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&key={key}&maxResults=500&playlistId={playlistId}"
+		var url = "https://youtube.googleapis.com/youtube/v3/playlistItems?part=snippet,contentDetails&key={key}&maxResults={max}&playlistId={playlistId}"
 				+ (StringUtils.hasText(pageToken) ? "&pageToken={pt}" : "");
 		var jsonNode = this.http.get()//
-				.uri(url, Map.of("key", this.apiKey, "pt", pageToken + "", "playlistId", playlistId))//
+				.uri(url,
+						Map.of("key", this.apiKey, "pt", pageToken + "", "playlistId", playlistId, "max", MAX_RESULTS))//
 				.retrieve()//
 				.body(JsonNode.class);//
 
@@ -168,14 +176,27 @@ class DefaultYoutubeClient implements YoutubeClient {
 				totalResults);
 	}
 
+	/**
+	 * every video a channel has uploaded. the search api would answer this too, but it
+	 * costs a hundred times the quota and stops after about five hundred results, so this
+	 * reads the channel's uploads playlist instead.
+	 */
 	@Override
 	public Collection<Video> getAllVideosByChannel(String channelId) {
-		var playlistVideos = this.getVideosByChannel(channelId, null);//
-		var nextPageToken = playlistVideos.nextPageToken();
-		if (StringUtils.hasText(nextPageToken)) {
-			return getVideosByChannel(channelId, nextPageToken).videos();
-		}
-		return new ArrayList<>();
+		var url = "https://youtube.googleapis.com/youtube/v3/channels?part=contentDetails&id={channelId}&key={key}";
+		var jsonNode = this.http//
+				.get()//
+				.uri(url, Map.of("channelId", channelId, "key", this.apiKey))//
+				.retrieve()//
+				.body(JsonNode.class);//
+		var uploadsPlaylistId = jsonNode//
+				.get("items")//
+				.get(0)//
+				.get("contentDetails")//
+				.get("relatedPlaylists")//
+				.get("uploads")//
+				.textValue();
+		return this.getAllVideosByPlaylist(uploadsPlaylistId);
 	}
 
 	@Override
@@ -251,14 +272,15 @@ class DefaultYoutubeClient implements YoutubeClient {
 
 	@Override
 	public Collection<Playlist> getAllPlaylistsByChannel(String channelId) {
-		var channelPlaylists = this.getPlaylistsByChannel(channelId, null);//
-		var nextPageToken = channelPlaylists.nextPageToken();
-		if (!StringUtils.hasText(nextPageToken)) {
-			return new ArrayList<>();
-		} //
-		else {
-			return this.getPlaylistsByChannel(channelId, nextPageToken).playlists();
+		var playlists = new ArrayList<Playlist>();
+		String pageToken = null;
+		do {
+			var page = this.getPlaylistsByChannel(channelId, pageToken);
+			playlists.addAll(page.playlists());
+			pageToken = page.nextPageToken();
 		}
+		while (StringUtils.hasText(pageToken));
+		return playlists;
 	}
 
 	private Channel buildChannelFromJsonNode(JsonNode jsonNode) {
