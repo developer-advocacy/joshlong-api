@@ -14,8 +14,15 @@ import javax.crypto.spec.SecretKeySpec;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
+ * GitHub calls this whenever the content repository changes. GitHub gives up on a webhook
+ * after ten seconds, and a rebuild takes longer than that, so this answers right away and
+ * rebuilds in the background, one rebuild at a time.
+ * <p>
  * TODO Could this be made into an Actuator endpoint and could that Actuator endpoint
  * feature some HTTP BASIC Spring Security?
  *
@@ -30,6 +37,10 @@ class IndexWebhookRestController {
 	private final IndexService indexService;
 
 	private final BlogProperties properties;
+
+	private final ExecutorService rebuilds = Executors.newSingleThreadExecutor(Thread.ofVirtual().factory());
+
+	private final AtomicBoolean rebuildQueued = new AtomicBoolean();
 
 	IndexWebhookRestController(IndexService indexService, BlogProperties properties) {
 		this.indexService = indexService;
@@ -47,10 +58,29 @@ class IndexWebhookRestController {
 			log.debug("theirs: {}", myHash);
 		}
 		if (StringUtils.hasText(myHash) && StringUtils.hasText(theirHash)) {
-			if (myHash.contains(theirHash))
-				return ResponseEntity.ok(indexService.rebuildIndex());
+			if (myHash.contains(theirHash)) {
+				this.requestRebuild();
+				return ResponseEntity.accepted().build();
+			}
 		}
 		return ResponseEntity.badRequest().build();
+	}
+
+	// a rebuild reads the whole repository, so pushes that arrive while one is waiting to
+	// run share it.
+	private void requestRebuild() {
+		if (!this.rebuildQueued.compareAndSet(false, true))
+			return;
+		this.rebuilds.execute(() -> {
+			this.rebuildQueued.set(false);
+			try {
+				var status = this.indexService.rebuildIndex();
+				this.log.info("rebuilt the index for the webhook: {} entries", status.entries());
+			}
+			catch (Exception e) {
+				this.log.error("couldn't rebuild the index for the webhook", e);
+			}
+		});
 	}
 
 	private String getGithubWebhookRequestSha256HeaderValue(RequestEntity<String> requestEntity) {
